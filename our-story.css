@@ -817,44 +817,76 @@
 }
 
 .quiz-photo-choice-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1.5px solid rgba(255, 255, 255, 0.15);
-  border-radius: 16px;
+  background: rgba(14, 25, 55, 0.4);
+  border: 1.5px solid rgba(0, 217, 255, 0.28);
+  border-radius: 18px;
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
 }
 
 .quiz-photo-choice-card:hover {
   transform: translateY(-4px);
   border-color: #5ef3ff;
-  box-shadow: 0 10px 30px rgba(0, 217, 255, 0.3);
+  box-shadow: 0 12px 35px rgba(0, 217, 255, 0.35), 0 0 20px rgba(0, 217, 255, 0.2);
 }
 
 .quiz-photo-choice-card.selected-card {
   border-color: #ff2a7a !important;
-  box-shadow: 0 0 35px rgba(255, 42, 122, 0.5) !important;
+  box-shadow: 0 0 35px rgba(255, 42, 122, 0.55), 0 12px 40px rgba(0, 0, 0, 0.6) !important;
   transform: scale(1.02);
 }
 
 .quiz-photo-thumb-wrap {
   width: 100%;
-  aspect-ratio: 4/3;
+  min-height: 180px;
+  max-height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 14px;
+  padding: 0.65rem;
+  box-sizing: border-box;
   overflow: hidden;
-  background: #000;
+  position: relative;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  aspect-ratio: var(--img-natural-aspect, auto);
 }
 
 .quiz-photo-thumb-wrap img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.4s ease;
+  max-width: 100%;
+  max-height: 400px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 10px;
+  display: block;
+  margin: 0 auto;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.55));
+  transition: transform 0.4s ease, filter 0.4s ease;
+}
+
+.quiz-photo-thumb-wrap.frame-portrait {
+  max-height: 460px;
+}
+
+.quiz-photo-thumb-wrap.frame-landscape {
+  max-height: 340px;
+}
+
+.quiz-photo-thumb-wrap.frame-square {
+  max-height: 380px;
 }
 
 .quiz-photo-choice-card:hover .quiz-photo-thumb-wrap img {
-  transform: scale(1.05);
+  transform: scale(1.03);
+  filter: drop-shadow(0 8px 24px rgba(0, 217, 255, 0.35));
 }
 
 .quiz-photo-label-box {
@@ -970,31 +1002,34 @@
 }
 
 .memory-card {
-  background: rgba(14, 25, 55, 0.7);
-  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  background: rgba(14, 25, 55, 0.45);
+  border: 1.5px solid rgba(0, 217, 255, 0.3);
   border-radius: 20px;
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .memory-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(0, 217, 255, 0.6);
-  box-shadow: 0 14px 40px rgba(0, 217, 255, 0.25);
+  transform: translateY(-5px);
+  border-color: rgba(0, 217, 255, 0.7);
+  box-shadow: 0 16px 45px rgba(0, 217, 255, 0.3), 0 0 25px rgba(0, 217, 255, 0.15);
 }
 
 .memory-card.selected-memory {
-  transform: scale(1.03);
+  transform: scale(1.025);
   border-color: #ff2a7a !important;
-  box-shadow: 0 16px 50px rgba(255, 42, 122, 0.5), 0 0 35px rgba(0, 217, 255, 0.4) !important;
+  box-shadow: 0 18px 55px rgba(255, 42, 122, 0.55), 0 0 40px rgba(0, 217, 255, 0.35) !important;
   z-index: 2;
 }
 
 .memory-card.dimmed-memory {
-  opacity: 0.3;
+  opacity: 0.28;
   transform: scale(0.96);
   pointer-events: none;
 }
@@ -1002,9 +1037,30 @@
 .memory-img-box {
   position: relative;
   width: 100%;
-  aspect-ratio: 4/3;
+  min-height: 220px;
+  max-height: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 14px;
+  padding: 0.65rem;
+  box-sizing: border-box;
   overflow: hidden;
-  background: #000;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  aspect-ratio: var(--img-natural-aspect, auto);
+}
+
+.memory-img-box.frame-portrait {
+  max-height: 520px;
+}
+
+.memory-img-box.frame-landscape {
+  max-height: 380px;
+}
+
+.memory-img-box.frame-square {
+  max-height: 440px;
 }
 
 .memory-swap-photo-btn {
@@ -1040,14 +1096,21 @@
 }
 
 .memory-img-box img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.6s ease;
+  max-width: 100%;
+  max-height: 460px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 12px;
+  display: block;
+  margin: 0 auto;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.6));
+  transition: transform 0.4s ease, filter 0.4s ease;
 }
 
 .memory-card:hover .memory-img-box img {
-  transform: scale(1.04);
+  transform: scale(1.025);
+  filter: drop-shadow(0 12px 30px rgba(0, 217, 255, 0.35));
 }
 
 .memory-details-box {
@@ -1374,33 +1437,42 @@
 
 .milestone-gallery-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
-  gap: 0.65rem;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.75rem;
   margin-top: 0.5rem;
+  align-items: center;
 }
 
 .milestone-gallery-thumb {
   position: relative;
-  aspect-ratio: 4/3;
-  border-radius: 8px;
+  aspect-ratio: var(--img-natural-aspect, 4/3);
+  border-radius: 10px;
   overflow: hidden;
-  background: #000;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  box-sizing: border-box;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
 .milestone-gallery-thumb:hover {
   transform: scale(1.03);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 12px rgba(0, 217, 255, 0.35);
-  border-color: rgba(0, 217, 255, 0.5);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 14px rgba(0, 217, 255, 0.4);
+  border-color: rgba(0, 217, 255, 0.6);
 }
 
 .milestone-gallery-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
   display: block;
+  border-radius: 8px;
 }
 
 .thumb-delete-action {

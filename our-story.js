@@ -17,14 +17,102 @@
 
   let supabaseClient = null;
 
+  // Single shared Supabase Client to prevent duplicate GoTrueClient instances
   function getSupabase() {
+    if (typeof window !== "undefined" && typeof window.getSupabaseClient === "function") {
+      const c = window.getSupabaseClient();
+      if (c) return c;
+    }
+    if (typeof window !== "undefined" && window.__sharedSupabaseClient) {
+      return window.__sharedSupabaseClient;
+    }
     if (supabaseClient) return supabaseClient;
-    if (window.supabase && typeof window.supabase.createClient === "function") {
+    if (typeof window !== "undefined" && window.supabase && typeof window.supabase.createClient === "function") {
       try {
         supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+        window.__sharedSupabaseClient = supabaseClient;
       } catch (_) {}
     }
     return supabaseClient;
+  }
+
+  // OUR STORY ADAPTIVE IMAGE FRAME SYSTEM
+  // Adapts the frame dynamically to the image's natural aspect ratio without distortion or cropping
+  function adaptFrameToImage(img, frameContainer) {
+    if (!img) return;
+    const container = frameContainer || img.parentElement;
+    if (!container) return;
+
+    function applyRatio() {
+      const nw = img.naturalWidth;
+      const nh = img.naturalHeight;
+      if (!nw || !nh) return;
+
+      const ratio = nw / nh;
+      container.style.setProperty("--img-natural-aspect", `${nw} / ${nh}`);
+      container.style.setProperty("--img-ratio-num", ratio.toFixed(4));
+
+      container.classList.remove("frame-portrait", "frame-landscape", "frame-square");
+      if (ratio < 0.85) {
+        container.classList.add("frame-portrait");
+      } else if (ratio > 1.2) {
+        container.classList.add("frame-landscape");
+      } else {
+        container.classList.add("frame-square");
+      }
+    }
+
+    if (img.complete && img.naturalWidth > 0) {
+      applyRatio();
+    } else {
+      img.addEventListener("load", applyRatio, { once: true });
+    }
+  }
+
+  // Upload Our Story assets directly to Supabase Storage and return permanent public URL
+  async function uploadOurStoryFile(folder, file) {
+    if (!file) return { success: false, error: "No file provided" };
+
+    // 1. Try window.uploadToSupabaseStorage if available
+    if (typeof window.uploadToSupabaseStorage === "function") {
+      try {
+        const res = await window.uploadToSupabaseStorage(`our-story/${folder}`, file);
+        if (res && res.success && res.publicUrl) {
+          return { success: true, publicUrl: res.publicUrl };
+        }
+      } catch (err) {
+        console.warn("[Our Story Storage Upload]:", err);
+      }
+    }
+
+    // 2. Direct SDK Storage upload
+    const client = getSupabase();
+    if (client && client.storage) {
+      try {
+        const cleanExt = (file.name.split('.').pop() || 'jpg').toLowerCase();
+        const cleanBase = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_");
+        const filePath = `our-story/${folder}/${Date.now()}_${cleanBase}.${cleanExt}`;
+
+        const { data, error } = await client.storage
+          .from("Birthday-assets")
+          .upload(filePath, file, { cacheControl: "3600", upsert: true });
+
+        if (!error && data) {
+          const { data: urlData } = client.storage
+            .from("Birthday-assets")
+            .getPublicUrl(filePath);
+          if (urlData && urlData.publicUrl) {
+            return { success: true, publicUrl: urlData.publicUrl };
+          }
+        }
+      } catch (sdkErr) {
+        console.warn("[Our Story Storage Direct SDK]:", sdkErr);
+      }
+    }
+
+    // 3. Optimized Data URL fallback
+    const dataUrl = await readOurStoryPhoto(file);
+    return { success: true, publicUrl: dataUrl, isDataUrl: true };
   }
 
   // DEFAULT OUR STORY DATA
@@ -603,6 +691,10 @@
       `;
 
       card.querySelectorAll(".quiz-photo-choice-card").forEach(photoCard => {
+        const img = photoCard.querySelector("img");
+        const wrap = photoCard.querySelector(".quiz-photo-thumb-wrap");
+        if (img && wrap) adaptFrameToImage(img, wrap);
+
         photoCard.addEventListener("click", () => {
           const choice = photoCard.getAttribute("data-choice");
           const isCorrect = choice === (q.correctAnswer || "A");
@@ -748,36 +840,64 @@
     const cardA = document.getElementById("memCardA");
     const cardB = document.getElementById("memCardB");
 
-    // Local File API photo picker for live memory rounds
+    const imgA = document.getElementById(`liveMemImgA_${r.round}`);
+    const imgB = document.getElementById(`liveMemImgB_${r.round}`);
+    if (imgA) adaptFrameToImage(imgA, imgA.parentElement);
+    if (imgB) adaptFrameToImage(imgB, imgB.parentElement);
+
+    // Local photo picker for live memory rounds with Supabase Storage upload
     container.querySelectorAll(".live-mem-photo-swap").forEach(input => {
-      input.addEventListener("change", (e) => {
+      input.addEventListener("change", async (e) => {
         const file = e.target.files && e.target.files[0];
         if (!file) return;
         const choice = input.getAttribute("data-choice");
         const roundNum = parseInt(input.getAttribute("data-round"), 10);
         
-        // Instant browser-side preview via URL.createObjectURL() without server upload
+        // Immediate local preview while uploading
         const objectUrl = URL.createObjectURL(file);
         const img = document.getElementById(`liveMemImg${choice.toUpperCase()}_${roundNum}`);
-        if (img) img.src = objectUrl;
+        if (img) {
+          img.src = objectUrl;
+          adaptFrameToImage(img, img.parentElement);
+        }
+
+        showOurStoryToast("Uploading photo to Supabase Storage...", "loading");
+
+        const uploadRes = await uploadOurStoryFile("memories", file);
+        const finalUrl = uploadRes.publicUrl || objectUrl;
 
         const roundData = storyData.memoryRounds.find(item => item.round === roundNum);
         if (roundData) {
-          if (choice === "a") roundData.photoA = objectUrl;
-          else roundData.photoB = objectUrl;
+          if (choice === "a") roundData.photoA = finalUrl;
+          else roundData.photoB = finalUrl;
         }
 
-        readOurStoryPhoto(file).then(dataUrl => {
-          if (roundData) {
-            if (choice === "a") roundData.photoA = dataUrl;
-            else roundData.photoB = dataUrl;
-            try {
-              localStorage.setItem("our_story_content_v1", JSON.stringify(storyData));
-            } catch (_) {}
-          }
-        });
+        if (img) {
+          img.src = finalUrl;
+          adaptFrameToImage(img, img.parentElement);
+        }
 
-        showOurStoryToast("Photo preview updated instantly! ❤️", "success");
+        // Persist to Supabase database
+        const client = getSupabase();
+        if (client && roundData) {
+          try {
+            await client.from("our_story_memory_rounds").upsert({
+              round_number: roundData.round,
+              title_a: roundData.titleA,
+              photo_a: roundData.photoA,
+              caption_a: roundData.captionA,
+              title_b: roundData.titleB,
+              photo_b: roundData.photoB,
+              caption_b: roundData.captionB
+            });
+          } catch (_) {}
+        }
+
+        try {
+          localStorage.setItem("our_story_content_v1", JSON.stringify(storyData));
+        } catch (_) {}
+
+        showOurStoryToast("Photo saved to Supabase! ❤️", "success");
       });
     });
 
@@ -943,32 +1063,20 @@
     if (!era) return;
     if (!Array.isArray(era.photos)) era.photos = [];
 
-    showOurStoryToast(`Processing ${files.length} photo(s)...`, "loading");
+    showOurStoryToast(`Uploading ${files.length} photo(s) to Supabase Storage...`, "loading");
 
     let addedCount = 0;
     for (const file of files) {
       if (!file.type || !file.type.startsWith("image/")) continue;
       try {
-        let photoUrl = "";
-        // 1. Try uploading to Supabase Storage if helper exists on window
-        if (typeof window.uploadToSupabaseStorage === "function") {
-          try {
-            const res = await window.uploadToSupabaseStorage("photos", file);
-            if (res && res.success && res.publicUrl) {
-              photoUrl = res.publicUrl;
-            }
-          } catch (_) {}
+        const uploadRes = await uploadOurStoryFile("timeline", file);
+        const photoUrl = uploadRes.publicUrl;
+        if (photoUrl) {
+          era.photos.push(photoUrl);
+          addedCount++;
         }
-
-        // 2. Fallback to optimized local Base64 Data URL
-        if (!photoUrl) {
-          photoUrl = await readOurStoryPhoto(file);
-        }
-
-        era.photos.push(photoUrl);
-        addedCount++;
       } catch (err) {
-        console.warn("[Our Story] Error reading photo file:", err);
+        console.warn("[Our Story] Error uploading timeline photo:", err);
       }
     }
 
@@ -996,6 +1104,7 @@
         try {
           await client.from("our_story_timeline").upsert({
             id: era.id,
+            sort_order: storyData.timeline.indexOf(era),
             era_title: era.eraTitle,
             era_date: era.eraDate,
             tagline: era.tagline,
@@ -1009,9 +1118,9 @@
 
       // Re-render Wrapped view
       renderWrappedAndTimeline();
-      showOurStoryToast(`Added ${addedCount} photo(s) to "${era.eraTitle}"! Saved to site ❤️`, "success");
+      showOurStoryToast(`Added ${addedCount} photo(s) to "${era.eraTitle}"! Saved to Supabase ❤️`, "success");
     } else {
-      showOurStoryToast("No valid image files selected.", "error");
+      showOurStoryToast("No valid image files selected or upload failed.", "error");
     }
   }
 
@@ -1168,8 +1277,11 @@
         });
       });
 
-      // Bind Lightbox on Thumbnails
+      // Bind Lightbox & aspect ratio adaptation on Thumbnails
       timelineWrap.querySelectorAll(".milestone-gallery-thumb").forEach(thumb => {
+        const img = thumb.querySelector("img");
+        if (img) adaptFrameToImage(img, thumb);
+
         thumb.addEventListener("click", (e) => {
           if (e.target.closest(".thumb-delete-action")) return;
           const src = thumb.getAttribute("data-src");
@@ -1406,47 +1518,75 @@
 
     // Local File API photo picker for admin quiz questions (photo_order)
     container.querySelectorAll(".admin-quiz-photo-file-picker").forEach(fileInput => {
-      fileInput.addEventListener("change", (e) => {
+      fileInput.addEventListener("change", async (e) => {
         const file = e.target.files && e.target.files[0];
         if (!file) return;
         const qid = fileInput.getAttribute("data-qid");
         const choice = fileInput.getAttribute("data-choice");
 
-        // Instant preview using URL.createObjectURL() without server upload
-        const objectUrl = URL.createObjectURL(file);
         const previewWrap = document.getElementById(`quizPhotoPreview${choice.toUpperCase()}_${qid}`);
-        if (previewWrap) {
-          const img = previewWrap.querySelector("img");
-          const placeholder = previewWrap.querySelector(".admin-photo-picker-placeholder");
-          if (img) {
-            img.src = objectUrl;
-            img.style.display = "block";
-          }
-          if (placeholder) placeholder.style.display = "none";
+        const img = previewWrap ? previewWrap.querySelector("img") : null;
+        const placeholder = previewWrap ? previewWrap.querySelector(".admin-photo-picker-placeholder") : null;
+
+        // Immediate preview while uploading
+        const objectUrl = URL.createObjectURL(file);
+        if (img) {
+          img.src = objectUrl;
+          img.style.display = "block";
+          adaptFrameToImage(img, previewWrap);
         }
+        if (placeholder) placeholder.style.display = "none";
+
+        showAdminStatus(`Uploading Quiz Photo ${choice.toUpperCase()} to Supabase Storage...`, "loading");
+
+        const uploadRes = await uploadOurStoryFile("quiz", file);
+        const finalUrl = uploadRes.publicUrl || objectUrl;
 
         const inputEl = document.querySelector(`.q-photo-${choice}[data-qid="${qid}"]`);
-        if (inputEl) inputEl.value = objectUrl;
+        if (inputEl) inputEl.value = finalUrl;
 
         const question = storyData.questions.find(q => q.id === qid);
         if (question) {
-          if (choice === "a") question.photoA = objectUrl;
-          else question.photoB = objectUrl;
+          if (choice === "a") question.photoA = finalUrl;
+          else question.photoB = finalUrl;
         }
 
-        readOurStoryPhoto(file).then(dataUrl => {
-          if (question) {
-            if (choice === "a") question.photoA = dataUrl;
-            else question.photoB = dataUrl;
-          }
-          if (inputEl) inputEl.value = dataUrl;
-          try {
-            localStorage.setItem("our_story_content_v1", JSON.stringify(storyData));
-          } catch (_) {}
-        });
+        if (img) {
+          img.src = finalUrl;
+          adaptFrameToImage(img, previewWrap);
+        }
 
-        showAdminStatus(`Photo ${choice.toUpperCase()} loaded! Immediate local preview active. Click 'Save' to sync.`, "success");
+        // Persist to Supabase database
+        const client = getSupabase();
+        if (client && question) {
+          try {
+            await client.from("our_story_quiz_questions").upsert({
+              id: question.id,
+              sort_order: storyData.questions.indexOf(question),
+              question_type: question.type,
+              prompt: question.prompt,
+              photo_a: question.photoA,
+              label_a: question.labelA,
+              photo_b: question.photoB,
+              label_b: question.labelB,
+              correct_answer: question.correctAnswer
+            });
+          } catch (_) {}
+        }
+
+        try {
+          localStorage.setItem("our_story_content_v1", JSON.stringify(storyData));
+        } catch (_) {}
+
+        showAdminStatus(`Quiz Photo ${choice.toUpperCase()} uploaded & saved to Supabase! ✨`, "success");
       });
+    });
+
+    // Apply adaptive framing to existing previews
+    container.querySelectorAll(".admin-photo-picker-preview img").forEach(img => {
+      if (img.src && img.style.display !== "none") {
+        adaptFrameToImage(img, img.parentElement);
+      }
     });
   }
 
@@ -1526,48 +1666,73 @@
     `).join("");
 
     container.querySelectorAll(".admin-upload-memory-photo").forEach(fileInput => {
-      fileInput.addEventListener("change", (e) => {
+      fileInput.addEventListener("change", async (e) => {
         const roundNum = parseInt(fileInput.getAttribute("data-round"), 10);
         const choice = fileInput.getAttribute("data-choice");
         const file = e.target.files && e.target.files[0];
         if (!file) return;
 
-        // 1. Instant local preview via URL.createObjectURL() without server upload
-        const objectUrl = URL.createObjectURL(file);
         const previewWrap = document.getElementById(`memPhotoPreview${choice.toUpperCase()}_${roundNum}`);
-        if (previewWrap) {
-          const img = previewWrap.querySelector("img");
-          const placeholder = previewWrap.querySelector(".admin-photo-picker-placeholder");
-          if (img) {
-            img.src = objectUrl;
-            img.style.display = "block";
-          }
-          if (placeholder) placeholder.style.display = "none";
+        const img = previewWrap ? previewWrap.querySelector("img") : null;
+        const placeholder = previewWrap ? previewWrap.querySelector(".admin-photo-picker-placeholder") : null;
+
+        // Immediate preview while uploading
+        const objectUrl = URL.createObjectURL(file);
+        if (img) {
+          img.src = objectUrl;
+          img.style.display = "block";
+          adaptFrameToImage(img, previewWrap);
         }
+        if (placeholder) placeholder.style.display = "none";
+
+        showAdminStatus(`Uploading Memory Photo ${choice.toUpperCase()} (Round ${roundNum}) to Supabase...`, "loading");
+
+        const uploadRes = await uploadOurStoryFile("memories", file);
+        const finalUrl = uploadRes.publicUrl || objectUrl;
 
         const inputEl = document.querySelector(`.m-photo-${choice}[data-round="${roundNum}"]`);
-        if (inputEl) inputEl.value = objectUrl;
+        if (inputEl) inputEl.value = finalUrl;
 
         const mem = storyData.memoryRounds.find(r => r.round === roundNum);
         if (mem) {
-          if (choice === "a") mem.photoA = objectUrl;
-          else mem.photoB = objectUrl;
+          if (choice === "a") mem.photoA = finalUrl;
+          else mem.photoB = finalUrl;
         }
 
-        // 2. Asynchronously persist to localStorage via optimized data URL
-        readOurStoryPhoto(file).then(dataUrl => {
-          if (mem) {
-            if (choice === "a") mem.photoA = dataUrl;
-            else mem.photoB = dataUrl;
-          }
-          if (inputEl) inputEl.value = dataUrl;
-          try {
-            localStorage.setItem("our_story_content_v1", JSON.stringify(storyData));
-          } catch (_) {}
-        });
+        if (img) {
+          img.src = finalUrl;
+          adaptFrameToImage(img, previewWrap);
+        }
 
-        showAdminStatus(`Photo ${choice.toUpperCase()} loaded! Immediate local preview active. Click 'Save' to sync.`, "success");
+        // Persist to Supabase database
+        const client = getSupabase();
+        if (client && mem) {
+          try {
+            await client.from("our_story_memory_rounds").upsert({
+              round_number: mem.round,
+              title_a: mem.titleA,
+              photo_a: mem.photoA,
+              caption_a: mem.captionA,
+              title_b: mem.titleB,
+              photo_b: mem.photoB,
+              caption_b: mem.captionB
+            });
+          } catch (_) {}
+        }
+
+        try {
+          localStorage.setItem("our_story_content_v1", JSON.stringify(storyData));
+        } catch (_) {}
+
+        showAdminStatus(`Memory Photo ${choice.toUpperCase()} (Round ${roundNum}) saved to Supabase! ❤️`, "success");
       });
+    });
+
+    // Apply adaptive framing to existing memory previews
+    container.querySelectorAll(".admin-photo-picker-preview img").forEach(img => {
+      if (img.src && img.style.display !== "none") {
+        adaptFrameToImage(img, img.parentElement);
+      }
     });
   }
 
@@ -1646,42 +1811,75 @@
         if (!era || !e.target.files || e.target.files.length === 0) return;
         if (!Array.isArray(era.photos)) era.photos = [];
 
-        showAdminStatus(`Processing ${e.target.files.length} photo(s)...`, "loading");
+        showAdminStatus(`Uploading ${e.target.files.length} photo(s) to Supabase Storage...`, "loading");
 
         for (const file of e.target.files) {
           if (!file.type || !file.type.startsWith("image/")) continue;
           try {
-            let photoUrl = "";
-            if (typeof window.uploadToSupabaseStorage === "function") {
-              try {
-                const res = await window.uploadToSupabaseStorage("photos", file);
-                if (res && res.success && res.publicUrl) photoUrl = res.publicUrl;
-              } catch (_) {}
+            const uploadRes = await uploadOurStoryFile("timeline", file);
+            if (uploadRes && uploadRes.publicUrl) {
+              era.photos.push(uploadRes.publicUrl);
             }
-            if (!photoUrl) {
-              photoUrl = await readOurStoryPhoto(file);
-            }
-            era.photos.push(photoUrl);
           } catch (err) {
             console.warn(err);
           }
         }
 
+        // Persist to Supabase
+        const client = getSupabase();
+        if (client) {
+          try {
+            await client.from("our_story_timeline").upsert({
+              id: era.id,
+              sort_order: storyData.timeline.indexOf(era),
+              era_title: era.eraTitle,
+              era_date: era.eraDate,
+              tagline: era.tagline,
+              description: era.description,
+              photos: era.photos
+            });
+          } catch (_) {}
+        }
+
+        try {
+          localStorage.setItem("our_story_content_v1", JSON.stringify(storyData));
+        } catch (_) {}
+
         renderAdminTimeline();
-        showAdminStatus(`Added photos to "${era.eraTitle}"! Click 'Save Our Story' to sync.`, "success");
+        showAdminStatus(`Added photos to "${era.eraTitle}" and saved to Supabase! ❤️`, "success");
       });
     });
 
     // Bind remove photo for admin timeline
     container.querySelectorAll(".btn-remove-admin-tphoto").forEach(btn => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const tid = btn.getAttribute("data-tid");
         const pIdx = parseInt(btn.getAttribute("data-pidx"), 10);
         const era = storyData.timeline.find(t => t.id === tid);
         if (era && Array.isArray(era.photos)) {
           era.photos.splice(pIdx, 1);
+
+          const client = getSupabase();
+          if (client) {
+            try {
+              await client.from("our_story_timeline").upsert({
+                id: era.id,
+                sort_order: storyData.timeline.indexOf(era),
+                era_title: era.eraTitle,
+                era_date: era.eraDate,
+                tagline: era.tagline,
+                description: era.description,
+                photos: era.photos
+              });
+            } catch (_) {}
+          }
+
+          try {
+            localStorage.setItem("our_story_content_v1", JSON.stringify(storyData));
+          } catch (_) {}
+
           renderAdminTimeline();
-          showAdminStatus("Photo removed. Click 'Save Our Story' to persist.", "info");
+          showAdminStatus("Photo removed and saved to Supabase.", "info");
         }
       });
     });
@@ -1836,6 +2034,7 @@
     const client = getSupabase();
     if (client) {
       try {
+        // 1. Settings
         await client.from("our_story_settings").upsert({
           id: 1,
           letter_heading: storyData.settings.letterHeading,
@@ -1850,7 +2049,26 @@
           updated_at: new Date().toISOString()
         });
 
-        // Upsert Memory rounds
+        // 2. Quiz Questions
+        for (let idx = 0; idx < storyData.questions.length; idx++) {
+          const q = storyData.questions[idx];
+          await client.from("our_story_quiz_questions").upsert({
+            id: q.id,
+            sort_order: idx,
+            question_type: q.type,
+            prompt: q.prompt,
+            options: q.options || [],
+            photo_a: q.photoA || null,
+            label_a: q.labelA || null,
+            photo_b: q.photoB || null,
+            label_b: q.labelB || null,
+            correct_answer: q.correctAnswer || (q.correctIndex !== undefined ? String(q.correctIndex) : null),
+            reaction_text: q.reactionCorrect || q.reaction || "Okay, you actually remember this one.",
+            reaction_wrong_text: q.reactionWrong || "Nahhh, you forgot that? 😭"
+          });
+        }
+
+        // 3. Memory rounds
         for (const m of storyData.memoryRounds) {
           await client.from("our_story_memory_rounds").upsert({
             round_number: m.round,
@@ -1860,6 +2078,33 @@
             title_b: m.titleB,
             photo_b: m.photoB,
             caption_b: m.captionB
+          });
+        }
+
+        // 4. Wrapped Stats
+        for (let idx = 0; idx < storyData.stats.length; idx++) {
+          const s = storyData.stats[idx];
+          await client.from("our_story_stats").upsert({
+            id: s.id,
+            sort_order: idx,
+            icon: s.icon,
+            label: s.label,
+            stat_value: s.value,
+            description: s.description
+          });
+        }
+
+        // 5. Timeline
+        for (let idx = 0; idx < storyData.timeline.length; idx++) {
+          const t = storyData.timeline[idx];
+          await client.from("our_story_timeline").upsert({
+            id: t.id,
+            sort_order: idx,
+            era_title: t.eraTitle,
+            era_date: t.eraDate,
+            tagline: t.tagline,
+            description: t.description,
+            photos: t.photos || []
           });
         }
 

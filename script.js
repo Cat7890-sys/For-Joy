@@ -995,18 +995,31 @@ async function initSupabaseAuth() {
 }
 
 /**
- * Lazily initialize the Supabase client if the official SDK is available
+ * Lazily initialize the Supabase client if the official SDK is available.
+ * Ensures a single shared GoTrueClient instance across the entire browser context.
  */
 function getSupabaseClient() {
-  if (supabaseClient) return supabaseClient;
+  if (typeof window !== "undefined" && window.__sharedSupabaseClient) {
+    supabaseClient = window.__sharedSupabaseClient;
+    return supabaseClient;
+  }
+  if (supabaseClient) {
+    if (typeof window !== "undefined") window.__sharedSupabaseClient = supabaseClient;
+    return supabaseClient;
+  }
   if (typeof window !== "undefined" && window.supabase && typeof window.supabase.createClient === "function") {
     try {
       supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+      window.__sharedSupabaseClient = supabaseClient;
     } catch (e) {
       console.warn("[Supabase] Failed to init client:", e);
     }
   }
   return supabaseClient;
+}
+
+if (typeof window !== "undefined") {
+  window.getSupabaseClient = getSupabaseClient;
 }
 
 /**
@@ -1139,6 +1152,10 @@ async function uploadToSupabaseStorage(arg1, arg2) {
   } catch (err) {
     return { success: false, error: err.message };
   }
+}
+
+if (typeof window !== "undefined") {
+  window.uploadToSupabaseStorage = uploadToSupabaseStorage;
 }
 
 /**
