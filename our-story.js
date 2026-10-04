@@ -716,7 +716,12 @@
     container.innerHTML = `
       <div class="memory-card" id="memCardA" data-choice="A">
         <div class="memory-img-box">
-          <img src="${r.photoA}" alt="${r.titleA}" />
+          <img src="${r.photoA}" alt="${r.titleA}" id="liveMemImgA_${r.round}" />
+          <label class="memory-swap-photo-btn" onclick="event.stopPropagation()" title="Select photo from device">
+            <span>📷</span>
+            <span>Change Photo</span>
+            <input type="file" accept="image/*" class="live-mem-photo-swap" data-round="${r.round}" data-choice="a" style="display: none;" />
+          </label>
         </div>
         <div class="memory-details-box">
           <h4 class="memory-title">${r.titleA}</h4>
@@ -726,7 +731,12 @@
 
       <div class="memory-card" id="memCardB" data-choice="B">
         <div class="memory-img-box">
-          <img src="${r.photoB}" alt="${r.titleB}" />
+          <img src="${r.photoB}" alt="${r.titleB}" id="liveMemImgB_${r.round}" />
+          <label class="memory-swap-photo-btn" onclick="event.stopPropagation()" title="Select photo from device">
+            <span>📷</span>
+            <span>Change Photo</span>
+            <input type="file" accept="image/*" class="live-mem-photo-swap" data-round="${r.round}" data-choice="b" style="display: none;" />
+          </label>
         </div>
         <div class="memory-details-box">
           <h4 class="memory-title">${r.titleB}</h4>
@@ -737,6 +747,39 @@
 
     const cardA = document.getElementById("memCardA");
     const cardB = document.getElementById("memCardB");
+
+    // Local File API photo picker for live memory rounds
+    container.querySelectorAll(".live-mem-photo-swap").forEach(input => {
+      input.addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const choice = input.getAttribute("data-choice");
+        const roundNum = parseInt(input.getAttribute("data-round"), 10);
+        
+        // Instant browser-side preview via URL.createObjectURL() without server upload
+        const objectUrl = URL.createObjectURL(file);
+        const img = document.getElementById(`liveMemImg${choice.toUpperCase()}_${roundNum}`);
+        if (img) img.src = objectUrl;
+
+        const roundData = storyData.memoryRounds.find(item => item.round === roundNum);
+        if (roundData) {
+          if (choice === "a") roundData.photoA = objectUrl;
+          else roundData.photoB = objectUrl;
+        }
+
+        readOurStoryPhoto(file).then(dataUrl => {
+          if (roundData) {
+            if (choice === "a") roundData.photoA = dataUrl;
+            else roundData.photoB = dataUrl;
+            try {
+              localStorage.setItem("our_story_content_v1", JSON.stringify(storyData));
+            } catch (_) {}
+          }
+        });
+
+        showOurStoryToast("Photo preview updated instantly! ❤️", "success");
+      });
+    });
 
     function onSelectMemory(selectedCard, otherCard) {
       cardA.style.pointerEvents = "none";
@@ -813,6 +856,195 @@
     }
   }
 
+  // COMPRESS & OPTIMIZE LOCAL PHOTO FILE
+  function readOurStoryPhoto(file) {
+    return new Promise((resolve, reject) => {
+      if (!file || !file.type || !file.type.startsWith("image/")) {
+        return reject(new Error("File is not an image"));
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 1200;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", 0.84));
+        };
+        img.onerror = () => resolve(e.target.result);
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Toast feedback helper
+  function showOurStoryToast(message, type = "info") {
+    let toast = document.getElementById("ourStoryToast");
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.id = "ourStoryToast";
+      toast.className = "our-story-toast";
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.className = `our-story-toast ${type} show`;
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => {
+      toast.classList.remove("show");
+    }, 4000);
+  }
+
+  // Lightbox Viewer
+  function openPhotoLightbox(src, caption) {
+    let lb = document.getElementById("ourStoryLightbox");
+    if (!lb) {
+      lb = document.createElement("div");
+      lb.id = "ourStoryLightbox";
+      lb.className = "our-story-lightbox";
+      lb.innerHTML = `
+        <div class="lightbox-backdrop"></div>
+        <div class="lightbox-dialog">
+          <button type="button" class="lightbox-close" aria-label="Close photo preview">&times;</button>
+          <img class="lightbox-img" src="" alt="Memory Preview" />
+          <div class="lightbox-caption"></div>
+        </div>
+      `;
+      document.body.appendChild(lb);
+      lb.querySelector(".lightbox-close").onclick = () => lb.classList.remove("active");
+      lb.querySelector(".lightbox-backdrop").onclick = () => lb.classList.remove("active");
+    }
+    const img = lb.querySelector(".lightbox-img");
+    const cap = lb.querySelector(".lightbox-caption");
+    if (img) img.src = src;
+    if (cap) cap.textContent = caption || "";
+    lb.classList.add("active");
+  }
+
+  // Add photos from local storage to a specific era
+  async function addPhotosToEra(eraId, files) {
+    if (!files || files.length === 0) return;
+    const era = storyData.timeline.find(t => t.id === eraId) || storyData.timeline[0];
+    if (!era) return;
+    if (!Array.isArray(era.photos)) era.photos = [];
+
+    showOurStoryToast(`Processing ${files.length} photo(s)...`, "loading");
+
+    let addedCount = 0;
+    for (const file of files) {
+      if (!file.type || !file.type.startsWith("image/")) continue;
+      try {
+        let photoUrl = "";
+        // 1. Try uploading to Supabase Storage if helper exists on window
+        if (typeof window.uploadToSupabaseStorage === "function") {
+          try {
+            const res = await window.uploadToSupabaseStorage("photos", file);
+            if (res && res.success && res.publicUrl) {
+              photoUrl = res.publicUrl;
+            }
+          } catch (_) {}
+        }
+
+        // 2. Fallback to optimized local Base64 Data URL
+        if (!photoUrl) {
+          photoUrl = await readOurStoryPhoto(file);
+        }
+
+        era.photos.push(photoUrl);
+        addedCount++;
+      } catch (err) {
+        console.warn("[Our Story] Error reading photo file:", err);
+      }
+    }
+
+    if (addedCount > 0) {
+      // Update memory count stat
+      let totalPhotos = 0;
+      storyData.timeline.forEach(t => {
+        if (Array.isArray(t.photos)) totalPhotos += t.photos.length;
+      });
+      const photoStat = storyData.stats.find(s => s.id === "s1" || s.label.toUpperCase().includes("MEMOR"));
+      if (photoStat) {
+        photoStat.value = String(Math.max(totalPhotos, 47));
+      }
+
+      // Save locally to site
+      try {
+        localStorage.setItem("our_story_content_v1", JSON.stringify(storyData));
+      } catch (err) {
+        console.warn("[Our Story] LocalStorage save notice:", err);
+      }
+
+      // Save to Supabase online database if available
+      const client = getSupabase();
+      if (client) {
+        try {
+          await client.from("our_story_timeline").upsert({
+            id: era.id,
+            era_title: era.eraTitle,
+            era_date: era.eraDate,
+            tagline: era.tagline,
+            description: era.description,
+            photos: era.photos
+          });
+        } catch (e) {
+          console.warn("[Our Story] Supabase timeline sync notice:", e);
+        }
+      }
+
+      // Re-render Wrapped view
+      renderWrappedAndTimeline();
+      showOurStoryToast(`Added ${addedCount} photo(s) to "${era.eraTitle}"! Saved to site ❤️`, "success");
+    } else {
+      showOurStoryToast("No valid image files selected.", "error");
+    }
+  }
+
+  // Remove photo from era
+  async function removePhotoFromEra(eraId, pIdx) {
+    const era = storyData.timeline.find(t => t.id === eraId);
+    if (!era || !Array.isArray(era.photos)) return;
+    era.photos.splice(pIdx, 1);
+
+    // Save locally
+    try {
+      localStorage.setItem("our_story_content_v1", JSON.stringify(storyData));
+    } catch (_) {}
+
+    // Save to Supabase
+    const client = getSupabase();
+    if (client) {
+      try {
+        await client.from("our_story_timeline").upsert({
+          id: era.id,
+          era_title: era.eraTitle,
+          era_date: era.eraDate,
+          tagline: era.tagline,
+          description: era.description,
+          photos: era.photos
+        });
+      } catch (_) {}
+    }
+
+    renderWrappedAndTimeline();
+    showOurStoryToast("Photo removed from timeline", "info");
+  }
+
   // STAGE 4: OUR STORY — WRAPPED & TIMELINE
   function renderWrappedAndTimeline() {
     const statsGrid = document.getElementById("wrappedStatsGrid");
@@ -831,7 +1063,30 @@
     }
 
     if (timelineWrap) {
-      timelineWrap.innerHTML = storyData.timeline.map((item, idx) => `
+      const eraOptionsHtml = storyData.timeline.map(t => `
+        <option value="${t.id}">${escapeHtml(t.eraTitle)} (${escapeHtml(t.eraDate || 'Era')})</option>
+      `).join("");
+
+      timelineWrap.innerHTML = `
+        <!-- Hero Card: Add Photos From Local Storage to Our Story -->
+        <div class="our-story-add-photos-hero-card">
+          <div class="add-photos-hero-content">
+            <div class="add-photos-badge">📸 PHOTOS &amp; MEMORIES</div>
+            <h4 class="add-photos-title">Add Photos to Our Story</h4>
+            <p class="add-photos-sub">Upload favorite photos from your device to save them permanently to the site's timeline album.</p>
+          </div>
+          <div class="add-photos-hero-controls">
+            <select class="our-story-era-select" id="ourStoryEraSelector" aria-label="Select story chapter">
+              ${eraOptionsHtml}
+            </select>
+            <label class="btn-add-our-story-main" title="Add photos from local storage">
+              <span>＋</span>
+              <span>Add Photos</span>
+              <input type="file" id="ourStoryHeroFileInput" accept="image/*" multiple style="display: none;" />
+            </label>
+          </div>
+        </div>
+      ` + storyData.timeline.map((item, idx) => `
         <div class="timeline-milestone-item ${idx === 0 ? "open" : ""}" data-id="${item.id}">
           <div class="milestone-node"></div>
           <div class="milestone-card">
@@ -843,25 +1098,85 @@
             
             <div class="milestone-expandable-content">
               <p class="milestone-desc-text">${item.description || ""}</p>
-              ${Array.isArray(item.photos) && item.photos.length > 0 ? `
-                <div class="milestone-gallery-grid">
-                  ${item.photos.map(p => `
-                    <div class="milestone-gallery-thumb">
-                      <img src="${p}" alt="Memory Photo" loading="lazy" />
-                    </div>
-                  `).join("")}
-                </div>
-              ` : ""}
+              
+              <div class="milestone-gallery-grid" data-era="${item.id}">
+                ${Array.isArray(item.photos) ? item.photos.map((p, pIdx) => `
+                  <div class="milestone-gallery-thumb" data-src="${p}" data-era="${item.id}" data-pidx="${pIdx}">
+                    <img src="${p}" alt="${escapeHtml(item.eraTitle)} Photo" loading="lazy" />
+                    <button type="button" class="thumb-delete-action" data-era="${item.id}" data-pidx="${pIdx}" title="Remove photo from era">&times;</button>
+                  </div>
+                `).join("") : ""}
+                
+                <!-- Quick Add Photo button inside this milestone -->
+                <label class="milestone-add-photo-btn" title="Add photo from device to ${escapeHtml(item.eraTitle)}">
+                  <span class="add-icon">＋</span>
+                  <span class="add-label">Add Photo</span>
+                  <input type="file" accept="image/*" multiple class="milestone-era-file-input" data-era="${item.id}" style="display: none;" />
+                </label>
+              </div>
             </div>
           </div>
         </div>
       `).join("");
 
+      // Bind Accordion click (avoid clicking inside gallery thumbs or buttons)
       timelineWrap.querySelectorAll(".milestone-card").forEach(card => {
-        card.addEventListener("click", () => {
+        card.addEventListener("click", (e) => {
+          if (e.target.closest(".milestone-gallery-grid") || e.target.closest("button") || e.target.closest("label") || e.target.closest("input")) {
+            return;
+          }
           const item = card.closest(".timeline-milestone-item");
           if (item) {
             item.classList.toggle("open");
+          }
+        });
+      });
+
+      // Bind Global Add Photos Input
+      const heroFileInput = document.getElementById("ourStoryHeroFileInput");
+      const eraSelector = document.getElementById("ourStoryEraSelector");
+      if (heroFileInput) {
+        heroFileInput.addEventListener("change", (e) => {
+          const selectedEraId = eraSelector ? eraSelector.value : storyData.timeline[0]?.id;
+          if (e.target.files && e.target.files.length > 0) {
+            addPhotosToEra(selectedEraId, Array.from(e.target.files));
+          }
+          e.target.value = "";
+        });
+      }
+
+      // Bind Milestone Specific Add Photo Inputs
+      timelineWrap.querySelectorAll(".milestone-era-file-input").forEach(input => {
+        input.addEventListener("change", (e) => {
+          const eraId = input.getAttribute("data-era");
+          if (e.target.files && e.target.files.length > 0) {
+            addPhotosToEra(eraId, Array.from(e.target.files));
+          }
+          e.target.value = "";
+        });
+      });
+
+      // Bind Delete Buttons
+      timelineWrap.querySelectorAll(".thumb-delete-action").forEach(delBtn => {
+        delBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const eraId = delBtn.getAttribute("data-era");
+          const pIdx = parseInt(delBtn.getAttribute("data-pidx"), 10);
+          if (eraId && !isNaN(pIdx)) {
+            removePhotoFromEra(eraId, pIdx);
+          }
+        });
+      });
+
+      // Bind Lightbox on Thumbnails
+      timelineWrap.querySelectorAll(".milestone-gallery-thumb").forEach(thumb => {
+        thumb.addEventListener("click", (e) => {
+          if (e.target.closest(".thumb-delete-action")) return;
+          const src = thumb.getAttribute("data-src");
+          const eraItem = thumb.closest(".timeline-milestone-item");
+          const eraTitle = eraItem ? eraItem.querySelector(".milestone-era-title")?.textContent : "Our Memory";
+          if (src) {
+            openPhotoLightbox(src, eraTitle);
           }
         });
       });
@@ -1004,15 +1319,46 @@
       } else if (q.type === "photo_order") {
         optionsHtml = `
           <div class="form-grid-2" style="margin-top: 0.4rem;">
+            <!-- Choice A Photo Picker -->
             <div class="form-group">
-              <label style="font-size: 0.72rem;">Photo A URL & Label</label>
-              <input type="text" class="form-input q-photo-a" data-qid="${q.id}" value="${escapeHtml(q.photoA || '')}" placeholder="Photo A URL" style="margin-bottom: 0.3rem;" />
-              <input type="text" class="form-input q-label-a" data-qid="${q.id}" value="${escapeHtml(q.labelA || '')}" placeholder="Label A" />
+              <label style="font-size: 0.72rem; font-weight: 700; color: #ff7aa2; margin-bottom: 0.25rem; display: block;">Photo A (Local File Picker)</label>
+              <div class="admin-photo-picker-box">
+                <div class="admin-photo-picker-preview" id="quizPhotoPreviewA_${q.id}">
+                  <img src="${q.photoA || ''}" alt="Photo A Preview" style="${q.photoA ? '' : 'display: none;'}" />
+                  <div class="admin-photo-picker-placeholder" style="${q.photoA ? 'display: none;' : ''}">
+                    <span style="font-size: 1.25rem;">📷</span>
+                    <span>No photo selected</span>
+                  </div>
+                </div>
+                <label class="btn-admin-choose-file" title="Select photo from local device without server upload">
+                  <span>📁 Choose Photo A</span>
+                  <input type="file" accept="image/*" class="admin-quiz-photo-file-picker" data-qid="${q.id}" data-choice="a" style="display: none;" />
+                </label>
+                <div class="picker-badge-instant">⚡ Local File API • URL.createObjectURL()</div>
+                <input type="text" class="form-input q-photo-a" data-qid="${q.id}" value="${escapeHtml(q.photoA || '')}" placeholder="Or paste Photo A URL..." style="font-size: 0.72rem; margin-top: 0.25rem; width: 100%;" />
+              </div>
+              <input type="text" class="form-input q-label-a" data-qid="${q.id}" value="${escapeHtml(q.labelA || '')}" placeholder="Label A (e.g. Memory A)" style="margin-top: 0.4rem;" />
             </div>
+
+            <!-- Choice B Photo Picker -->
             <div class="form-group">
-              <label style="font-size: 0.72rem;">Photo B URL & Label</label>
-              <input type="text" class="form-input q-photo-b" data-qid="${q.id}" value="${escapeHtml(q.photoB || '')}" placeholder="Photo B URL" style="margin-bottom: 0.3rem;" />
-              <input type="text" class="form-input q-label-b" data-qid="${q.id}" value="${escapeHtml(q.labelB || '')}" placeholder="Label B" />
+              <label style="font-size: 0.72rem; font-weight: 700; color: #5ef3ff; margin-bottom: 0.25rem; display: block;">Photo B (Local File Picker)</label>
+              <div class="admin-photo-picker-box">
+                <div class="admin-photo-picker-preview" id="quizPhotoPreviewB_${q.id}">
+                  <img src="${q.photoB || ''}" alt="Photo B Preview" style="${q.photoB ? '' : 'display: none;'}" />
+                  <div class="admin-photo-picker-placeholder" style="${q.photoB ? 'display: none;' : ''}">
+                    <span style="font-size: 1.25rem;">📷</span>
+                    <span>No photo selected</span>
+                  </div>
+                </div>
+                <label class="btn-admin-choose-file" title="Select photo from local device without server upload">
+                  <span>📁 Choose Photo B</span>
+                  <input type="file" accept="image/*" class="admin-quiz-photo-file-picker" data-qid="${q.id}" data-choice="b" style="display: none;" />
+                </label>
+                <div class="picker-badge-instant">⚡ Local File API • URL.createObjectURL()</div>
+                <input type="text" class="form-input q-photo-b" data-qid="${q.id}" value="${escapeHtml(q.photoB || '')}" placeholder="Or paste Photo B URL..." style="font-size: 0.72rem; margin-top: 0.25rem; width: 100%;" />
+              </div>
+              <input type="text" class="form-input q-label-b" data-qid="${q.id}" value="${escapeHtml(q.labelB || '')}" placeholder="Label B (e.g. Memory B)" style="margin-top: 0.4rem;" />
             </div>
           </div>
           <div class="form-grid-2" style="margin-top: 0.4rem;">
@@ -1057,6 +1403,51 @@
         renderAdminQuizQuestions();
       });
     });
+
+    // Local File API photo picker for admin quiz questions (photo_order)
+    container.querySelectorAll(".admin-quiz-photo-file-picker").forEach(fileInput => {
+      fileInput.addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const qid = fileInput.getAttribute("data-qid");
+        const choice = fileInput.getAttribute("data-choice");
+
+        // Instant preview using URL.createObjectURL() without server upload
+        const objectUrl = URL.createObjectURL(file);
+        const previewWrap = document.getElementById(`quizPhotoPreview${choice.toUpperCase()}_${qid}`);
+        if (previewWrap) {
+          const img = previewWrap.querySelector("img");
+          const placeholder = previewWrap.querySelector(".admin-photo-picker-placeholder");
+          if (img) {
+            img.src = objectUrl;
+            img.style.display = "block";
+          }
+          if (placeholder) placeholder.style.display = "none";
+        }
+
+        const inputEl = document.querySelector(`.q-photo-${choice}[data-qid="${qid}"]`);
+        if (inputEl) inputEl.value = objectUrl;
+
+        const question = storyData.questions.find(q => q.id === qid);
+        if (question) {
+          if (choice === "a") question.photoA = objectUrl;
+          else question.photoB = objectUrl;
+        }
+
+        readOurStoryPhoto(file).then(dataUrl => {
+          if (question) {
+            if (choice === "a") question.photoA = dataUrl;
+            else question.photoB = dataUrl;
+          }
+          if (inputEl) inputEl.value = dataUrl;
+          try {
+            localStorage.setItem("our_story_content_v1", JSON.stringify(storyData));
+          } catch (_) {}
+        });
+
+        showAdminStatus(`Photo ${choice.toUpperCase()} loaded! Immediate local preview active. Click 'Save' to sync.`, "success");
+      });
+    });
   }
 
   function renderAdminMemoryRounds() {
@@ -1068,33 +1459,64 @@
         <h5 style="color: #5ef3ff; margin: 0 0 0.6rem 0; font-size: 0.86rem;">ROUND ${m.round} OF 5</h5>
         <div class="form-grid-2">
           <!-- Choice A -->
-          <div style="background: rgba(0,0,0,0.25); padding: 0.6rem; border-radius: 8px;">
-            <span style="font-weight: 700; color: #ff7aa2; font-size: 0.78rem;">Memory A</span>
-            <div class="form-group" style="margin-top: 0.35rem;">
+          <div style="background: rgba(0,0,0,0.25); padding: 0.65rem; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+              <span style="font-weight: 700; color: #ff7aa2; font-size: 0.78rem;">Memory A</span>
+            </div>
+            
+            <div class="admin-photo-picker-box">
+              <div class="admin-photo-picker-preview" id="memPhotoPreviewA_${m.round}">
+                <img src="${m.photoA || ''}" alt="Memory A Preview" style="${m.photoA ? '' : 'display: none;'}" />
+                <div class="admin-photo-picker-placeholder" style="${m.photoA ? 'display: none;' : ''}">
+                  <span style="font-size: 1.25rem;">📷</span>
+                  <span>No photo selected</span>
+                </div>
+              </div>
+              <label class="btn-admin-choose-file" title="Select photo from local device without server upload">
+                <span>📁 Upload Photo A</span>
+                <input type="file" accept="image/*" class="admin-upload-memory-photo" data-round="${m.round}" data-choice="a" style="display: none;" />
+              </label>
+              <div class="picker-badge-instant">⚡ Local File API • URL.createObjectURL()</div>
+              <input type="text" class="form-input m-photo-a" data-round="${m.round}" value="${escapeHtml(m.photoA || '')}" placeholder="Or paste Photo A URL..." style="font-size: 0.72rem; margin-top: 0.25rem; width: 100%;" />
+            </div>
+
+            <div class="form-group" style="margin-top: 0.4rem;">
               <label style="font-size: 0.72rem;">Title A</label>
               <input type="text" class="form-input m-title-a" data-round="${m.round}" value="${escapeHtml(m.titleA || '')}" />
             </div>
-            <div class="form-group">
-              <label style="font-size: 0.72rem;">Photo A URL</label>
-              <input type="text" class="form-input m-photo-a" data-round="${m.round}" value="${escapeHtml(m.photoA || '')}" />
-            </div>
-            <div class="form-group">
+            <div class="form-group" style="margin-top: 0.35rem;">
               <label style="font-size: 0.72rem;">Caption A</label>
               <input type="text" class="form-input m-caption-a" data-round="${m.round}" value="${escapeHtml(m.captionA || '')}" />
             </div>
           </div>
+
           <!-- Choice B -->
-          <div style="background: rgba(0,0,0,0.25); padding: 0.6rem; border-radius: 8px;">
-            <span style="font-weight: 700; color: #5ef3ff; font-size: 0.78rem;">Memory B</span>
-            <div class="form-group" style="margin-top: 0.35rem;">
+          <div style="background: rgba(0,0,0,0.25); padding: 0.65rem; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+              <span style="font-weight: 700; color: #5ef3ff; font-size: 0.78rem;">Memory B</span>
+            </div>
+            
+            <div class="admin-photo-picker-box">
+              <div class="admin-photo-picker-preview" id="memPhotoPreviewB_${m.round}">
+                <img src="${m.photoB || ''}" alt="Memory B Preview" style="${m.photoB ? '' : 'display: none;'}" />
+                <div class="admin-photo-picker-placeholder" style="${m.photoB ? 'display: none;' : ''}">
+                  <span style="font-size: 1.25rem;">📷</span>
+                  <span>No photo selected</span>
+                </div>
+              </div>
+              <label class="btn-admin-choose-file" title="Select photo from local device without server upload">
+                <span>📁 Upload Photo B</span>
+                <input type="file" accept="image/*" class="admin-upload-memory-photo" data-round="${m.round}" data-choice="b" style="display: none;" />
+              </label>
+              <div class="picker-badge-instant">⚡ Local File API • URL.createObjectURL()</div>
+              <input type="text" class="form-input m-photo-b" data-round="${m.round}" value="${escapeHtml(m.photoB || '')}" placeholder="Or paste Photo B URL..." style="font-size: 0.72rem; margin-top: 0.25rem; width: 100%;" />
+            </div>
+
+            <div class="form-group" style="margin-top: 0.4rem;">
               <label style="font-size: 0.72rem;">Title B</label>
               <input type="text" class="form-input m-title-b" data-round="${m.round}" value="${escapeHtml(m.titleB || '')}" />
             </div>
-            <div class="form-group">
-              <label style="font-size: 0.72rem;">Photo B URL</label>
-              <input type="text" class="form-input m-photo-b" data-round="${m.round}" value="${escapeHtml(m.photoB || '')}" />
-            </div>
-            <div class="form-group">
+            <div class="form-group" style="margin-top: 0.35rem;">
               <label style="font-size: 0.72rem;">Caption B</label>
               <input type="text" class="form-input m-caption-b" data-round="${m.round}" value="${escapeHtml(m.captionB || '')}" />
             </div>
@@ -1102,6 +1524,51 @@
         </div>
       </div>
     `).join("");
+
+    container.querySelectorAll(".admin-upload-memory-photo").forEach(fileInput => {
+      fileInput.addEventListener("change", (e) => {
+        const roundNum = parseInt(fileInput.getAttribute("data-round"), 10);
+        const choice = fileInput.getAttribute("data-choice");
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+
+        // 1. Instant local preview via URL.createObjectURL() without server upload
+        const objectUrl = URL.createObjectURL(file);
+        const previewWrap = document.getElementById(`memPhotoPreview${choice.toUpperCase()}_${roundNum}`);
+        if (previewWrap) {
+          const img = previewWrap.querySelector("img");
+          const placeholder = previewWrap.querySelector(".admin-photo-picker-placeholder");
+          if (img) {
+            img.src = objectUrl;
+            img.style.display = "block";
+          }
+          if (placeholder) placeholder.style.display = "none";
+        }
+
+        const inputEl = document.querySelector(`.m-photo-${choice}[data-round="${roundNum}"]`);
+        if (inputEl) inputEl.value = objectUrl;
+
+        const mem = storyData.memoryRounds.find(r => r.round === roundNum);
+        if (mem) {
+          if (choice === "a") mem.photoA = objectUrl;
+          else mem.photoB = objectUrl;
+        }
+
+        // 2. Asynchronously persist to localStorage via optimized data URL
+        readOurStoryPhoto(file).then(dataUrl => {
+          if (mem) {
+            if (choice === "a") mem.photoA = dataUrl;
+            else mem.photoB = dataUrl;
+          }
+          if (inputEl) inputEl.value = dataUrl;
+          try {
+            localStorage.setItem("our_story_content_v1", JSON.stringify(storyData));
+          } catch (_) {}
+        });
+
+        showAdminStatus(`Photo ${choice.toUpperCase()} loaded! Immediate local preview active. Click 'Save' to sync.`, "success");
+      });
+    });
   }
 
   function renderAdminWrappedStats() {
@@ -1151,11 +1618,73 @@
           <textarea class="form-textarea t-desc-input" rows="2" data-tid="${t.id}">${escapeHtml(t.description || '')}</textarea>
         </div>
         <div class="form-group" style="margin-top: 0.35rem;">
-          <label style="font-size: 0.72rem;">Photo URLs (comma separated)</label>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <label style="font-size: 0.72rem;">Photos (${(t.photos || []).length})</label>
+            <label style="cursor: pointer; color: #ff85c0; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px; font-weight: 700;">
+              📁 Add Local Photos
+              <input type="file" accept="image/*" multiple class="admin-upload-timeline-file" data-tid="${t.id}" style="display: none;" />
+            </label>
+          </div>
           <input type="text" class="form-input t-photos-input" data-tid="${t.id}" value="${escapeHtml((t.photos || []).join(', '))}" />
+          <div class="admin-timeline-thumbs-row" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
+            ${(t.photos || []).map((p, pIdx) => `
+              <div style="position: relative; width: 48px; height: 48px; border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2);">
+                <img src="${p}" style="width: 100%; height: 100%; object-fit: cover;" />
+                <button type="button" class="btn-remove-admin-tphoto" data-tid="${t.id}" data-pidx="${pIdx}" style="position: absolute; top: 0; right: 0; width: 18px; height: 18px; background: rgba(244,63,94,0.85); color: #fff; border: none; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center;" title="Delete photo">&times;</button>
+              </div>
+            `).join('')}
+          </div>
         </div>
       </div>
     `).join("");
+
+    // Bind local photo upload for admin timeline
+    container.querySelectorAll(".admin-upload-timeline-file").forEach(input => {
+      input.addEventListener("change", async (e) => {
+        const tid = input.getAttribute("data-tid");
+        const era = storyData.timeline.find(t => t.id === tid);
+        if (!era || !e.target.files || e.target.files.length === 0) return;
+        if (!Array.isArray(era.photos)) era.photos = [];
+
+        showAdminStatus(`Processing ${e.target.files.length} photo(s)...`, "loading");
+
+        for (const file of e.target.files) {
+          if (!file.type || !file.type.startsWith("image/")) continue;
+          try {
+            let photoUrl = "";
+            if (typeof window.uploadToSupabaseStorage === "function") {
+              try {
+                const res = await window.uploadToSupabaseStorage("photos", file);
+                if (res && res.success && res.publicUrl) photoUrl = res.publicUrl;
+              } catch (_) {}
+            }
+            if (!photoUrl) {
+              photoUrl = await readOurStoryPhoto(file);
+            }
+            era.photos.push(photoUrl);
+          } catch (err) {
+            console.warn(err);
+          }
+        }
+
+        renderAdminTimeline();
+        showAdminStatus(`Added photos to "${era.eraTitle}"! Click 'Save Our Story' to sync.`, "success");
+      });
+    });
+
+    // Bind remove photo for admin timeline
+    container.querySelectorAll(".btn-remove-admin-tphoto").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const tid = btn.getAttribute("data-tid");
+        const pIdx = parseInt(btn.getAttribute("data-pidx"), 10);
+        const era = storyData.timeline.find(t => t.id === tid);
+        if (era && Array.isArray(era.photos)) {
+          era.photos.splice(pIdx, 1);
+          renderAdminTimeline();
+          showAdminStatus("Photo removed. Click 'Save Our Story' to persist.", "info");
+        }
+      });
+    });
   }
 
   async function loadSubmissionsForAdmin() {
