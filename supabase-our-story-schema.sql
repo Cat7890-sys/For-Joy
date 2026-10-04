@@ -50,6 +50,29 @@ CREATE TABLE IF NOT EXISTS public.our_story_quiz_questions (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Seed exactly 7 active quiz questions (Original Q2, Q3, Q4, Q5, Q6, Q7, Q9)
+INSERT INTO public.our_story_quiz_questions (id, sort_order, question_type, prompt, options, photo_a, label_a, photo_b, label_b, correct_answer, reaction_text, reaction_wrong_text)
+VALUES
+  ('q1', 0, 'photo_order', 'WHICH HAPPENED FIRST?', '[]'::jsonb, 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=600&auto=format&fit=crop&q=80', 'That sunny afternoon stroll...', 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&auto=format&fit=crop&q=80', 'That cozy late night ramen date...', 'A', 'Look at your memory working overtime! ✨', 'You got the timeline mixed up! 😭'),
+  ('q2', 1, 'who_likely', 'Who was more likely to forget what they were saying halfway through a story?', '["YOU", "ME"]'::jsonb, null, null, null, null, null, 'Accurate as always. 😂', 'Accurate as always. 😂'),
+  ('q3', 2, 'multiple_choice', 'What was the very first song we both claimed as ''our song''?', '["Golden Hour", "Until I Found You", "Die For You", "Perfect"]'::jsonb, null, null, null, null, '0', 'A classic that will never get old. 🎵', 'How could you forget our melody? 😭'),
+  ('q4', 3, 'memorable_choice', 'Which of these moments lives rent-free in your mind?', '["That road trip where we sang at the top of our lungs", "That quiet night we sat talking about our future for hours"]'::jsonb, null, null, null, null, null, 'That really was an unforgettable moment. ❤️', 'That really was an unforgettable moment. ❤️'),
+  ('q5', 4, 'who_likely', 'Who was more likely to suggest getting food at 1:00 AM on a random Tuesday?', '["YOU", "ME"]'::jsonb, null, null, null, null, null, 'Guilty as charged! 🍟', 'Guilty as charged! 🍟'),
+  ('q6', 5, 'photo_order', 'WHICH HAPPENED FIRST?', '[]'::jsonb, 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&auto=format&fit=crop&q=80', 'The rooftop sunset smiles...', 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&auto=format&fit=crop&q=80', 'The spontaneous weekend getaway drive...', 'A', 'Spot on! That memory is golden.', 'Almost, but the rooftop came first! 🌅'),
+  ('q7', 6, 'multiple_choice', 'What is my absolute favorite thing about you?', '["The way your eyes crinkle when you really laugh", "Your kindness and gentle heart", "How you make any bad day feel safe", "Every single thing about you"]'::jsonb, null, null, null, null, '3', 'Always and forever. ❤️', 'It''s all of it, every single thing. ❤️')
+ON CONFLICT (id) DO UPDATE SET
+  sort_order = EXCLUDED.sort_order,
+  question_type = EXCLUDED.question_type,
+  prompt = EXCLUDED.prompt,
+  options = EXCLUDED.options,
+  photo_a = EXCLUDED.photo_a,
+  label_a = EXCLUDED.label_a,
+  photo_b = EXCLUDED.photo_b,
+  label_b = EXCLUDED.label_b,
+  correct_answer = EXCLUDED.correct_answer,
+  reaction_text = EXCLUDED.reaction_text,
+  reaction_wrong_text = EXCLUDED.reaction_wrong_text;
+
 -- 3. Table: our_story_memory_rounds
 CREATE TABLE IF NOT EXISTS public.our_story_memory_rounds (
   round_number INT PRIMARY KEY,

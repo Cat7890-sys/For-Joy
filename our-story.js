@@ -132,20 +132,6 @@
     questions: [
       {
         id: "q1",
-        type: "multiple_choice",
-        prompt: "Where did we have our very first official conversation?",
-        options: [
-          "Over Instagram DMs until 3am",
-          "At that little coffee shop on the corner",
-          "In the car outside while it was raining",
-          "At a mutual friend's birthday party"
-        ],
-        correctIndex: 0,
-        reactionCorrect: "Okay, you actually remember this one. ✨",
-        reactionWrong: "Nahhh, you forgot that? 😭"
-      },
-      {
-        id: "q2",
         type: "photo_order",
         prompt: "WHICH HAPPENED FIRST?",
         photoA: "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=600&auto=format&fit=crop&q=80",
@@ -157,14 +143,14 @@
         reactionWrong: "You got the timeline mixed up! 😭"
       },
       {
-        id: "q3",
+        id: "q2",
         type: "who_likely",
         prompt: "Who was more likely to forget what they were saying halfway through a story?",
         options: ["YOU", "ME"],
         reaction: "Accurate as always. 😂"
       },
       {
-        id: "q4",
+        id: "q3",
         type: "multiple_choice",
         prompt: "What was the very first song we both claimed as 'our song'?",
         options: [
@@ -178,7 +164,7 @@
         reactionWrong: "How could you forget our melody? 😭"
       },
       {
-        id: "q5",
+        id: "q4",
         type: "memorable_choice",
         prompt: "Which of these moments lives rent-free in your mind?",
         options: [
@@ -188,14 +174,14 @@
         reaction: "That really was an unforgettable moment. ❤️"
       },
       {
-        id: "q6",
+        id: "q5",
         type: "who_likely",
         prompt: "Who was more likely to suggest getting food at 1:00 AM on a random Tuesday?",
         options: ["YOU", "ME"],
         reaction: "Guilty as charged! 🍟"
       },
       {
-        id: "q7",
+        id: "q6",
         type: "photo_order",
         prompt: "WHICH HAPPENED FIRST?",
         photoA: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&auto=format&fit=crop&q=80",
@@ -207,21 +193,7 @@
         reactionWrong: "Almost, but the rooftop came first! 🌅"
       },
       {
-        id: "q8",
-        type: "multiple_choice",
-        prompt: "What do we always end up laughing uncontrollably about?",
-        options: [
-          "Our absurd inside jokes no one else understands",
-          "The way we both trip over our own words",
-          "Every single time GPS gave us terrible directions",
-          "All of the above without question"
-        ],
-        correctIndex: 3,
-        reactionCorrect: "That one was easy. 😭",
-        reactionWrong: "It's definitely all of the above! 😂"
-      },
-      {
-        id: "q9",
+        id: "q7",
         type: "multiple_choice",
         prompt: "What is my absolute favorite thing about you?",
         options: [
@@ -233,16 +205,6 @@
         correctIndex: 3,
         reactionCorrect: "Always and forever. ❤️",
         reactionWrong: "It's all of it, every single thing. ❤️"
-      },
-      {
-        id: "q10",
-        type: "memorable_choice",
-        prompt: "If you could freeze one feeling in time, which would it be?",
-        options: [
-          "The feeling of seeing each other after days apart",
-          "The comfortable silence where nothing else matters"
-        ],
-        reaction: "A feeling worth keeping forever. ✨"
       }
     ],
     memoryRounds: [
@@ -272,24 +234,6 @@
         titleB: "The Sunset Silhouette",
         photoB: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&auto=format&fit=crop&q=80",
         captionB: "Standing together watching the sky turn pink and gold, time standing still."
-      },
-      {
-        round: 4,
-        titleA: "The Late Night Taco Runs",
-        photoA: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80",
-        captionA: "Sitting on the car hood at 1am eating good food and talking about life.",
-        titleB: "The Peaceful Morning Hug",
-        photoB: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&auto=format&fit=crop&q=80",
-        captionB: "That peaceful feeling when the whole world is rushing, but we are right on time."
-      },
-      {
-        round: 5,
-        titleA: "Every Single Day Together",
-        photoA: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=800&auto=format&fit=crop&q=80",
-        captionA: "No big plans needed. Just your presence turns any normal day into magic.",
-        titleB: "The Future Yet To Be Written",
-        photoB: "https://images.unsplash.com/photo-1470240731273-7821a6eeb6bd?w=800&auto=format&fit=crop&q=80",
-        captionB: "All the places we haven't visited yet, and all the memories waiting for us."
       }
     ],
     stats: [
@@ -376,26 +320,51 @@
         // Try fetching questions
         const { data: qRows } = await client.from("our_story_quiz_questions").select("*").order("sort_order", { ascending: true });
         if (qRows && qRows.length > 0) {
-          storyData.questions = qRows.map(q => ({
-            id: q.id,
-            type: q.question_type,
-            prompt: q.prompt,
-            options: q.options || [],
-            photoA: q.photo_a,
-            labelA: q.label_a,
-            photoB: q.photo_b,
-            labelB: q.label_b,
-            correctAnswer: q.correct_answer,
-            reactionCorrect: q.reaction_text,
-            reactionWrong: q.reaction_wrong_text || "Nahhh, you forgot that? 😭",
-            reaction: q.reaction_text
-          }));
+          const loadedQuestions = qRows.map(q => {
+            let correctIdx = undefined;
+            if (q.question_type === "multiple_choice") {
+              const parsed = parseInt(q.correct_answer, 10);
+              correctIdx = !isNaN(parsed) ? parsed : 0;
+            }
+            return {
+              id: q.id,
+              type: q.question_type,
+              prompt: q.prompt,
+              options: q.options || [],
+              photoA: q.photo_a,
+              labelA: q.label_a,
+              photoB: q.photo_b,
+              labelB: q.label_b,
+              correctAnswer: q.correct_answer,
+              correctIndex: correctIdx,
+              reactionCorrect: q.reaction_text,
+              reactionWrong: q.reaction_wrong_text || "Nahhh, you forgot that? 😭",
+              reaction: q.reaction_text
+            };
+          });
+
+          // Filter out the 3 deleted questions (Original Q1, Q8, Q10)
+          const DELETED_PROMPTS = [
+            "first official conversation",
+            "laughing uncontrollably",
+            "freeze one feeling"
+          ];
+          const activeQuestions = loadedQuestions.filter(q => {
+            const p = (q.prompt || "").toLowerCase();
+            return !DELETED_PROMPTS.some(dp => p.includes(dp));
+          });
+
+          if (activeQuestions.length >= 7) {
+            storyData.questions = activeQuestions.slice(0, 7);
+          } else if (activeQuestions.length > 0) {
+            storyData.questions = activeQuestions;
+          }
         }
 
-        // Try fetching memory rounds
+        // Try fetching memory rounds (exactly 3 rounds active)
         const { data: mRows } = await client.from("our_story_memory_rounds").select("*").order("round_number", { ascending: true });
         if (mRows && mRows.length > 0) {
-          storyData.memoryRounds = mRows.map(m => ({
+          storyData.memoryRounds = mRows.slice(0, 3).map(m => ({
             round: m.round_number,
             titleA: m.title_a,
             photoA: m.photo_a,
@@ -404,6 +373,8 @@
             photoB: m.photo_b,
             captionB: m.caption_b
           }));
+        } else {
+          storyData.memoryRounds = JSON.parse(JSON.stringify(defaultOurStoryData.memoryRounds));
         }
 
         // Try fetching stats
@@ -1486,6 +1457,16 @@
         `;
       } else {
         optionsHtml = `
+          ${(q.options && q.options.length > 0) ? `
+            <div class="form-grid-2" style="margin-top: 0.4rem;">
+              ${q.options.map((opt, oIdx) => `
+                <div class="form-group" style="margin-bottom: 0.35rem;">
+                  <label style="font-size: 0.72rem;">Choice ${oIdx + 1}</label>
+                  <input type="text" class="form-input q-opt-input" data-qid="${q.id}" data-oidx="${oIdx}" value="${escapeHtml(opt)}" />
+                </div>
+              `).join("")}
+            </div>
+          ` : ''}
           <div class="form-group" style="margin-top: 0.4rem;">
             <label style="font-size: 0.72rem;">Reaction Message</label>
             <input type="text" class="form-input q-reaction" data-qid="${q.id}" value="${escapeHtml(q.reaction || '')}" />
@@ -1594,9 +1575,12 @@
     const container = document.getElementById("adminMemoryRoundsList");
     if (!container) return;
 
-    container.innerHTML = storyData.memoryRounds.map((m) => `
+    // Display and manage exactly 3 active memory rounds
+    const activeRounds = (storyData.memoryRounds || []).slice(0, 3);
+
+    container.innerHTML = activeRounds.map((m) => `
       <div class="admin-card" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 0.85rem;" data-round="${m.round}">
-        <h5 style="color: #5ef3ff; margin: 0 0 0.6rem 0; font-size: 0.86rem;">ROUND ${m.round} OF 5</h5>
+        <h5 style="color: #5ef3ff; margin: 0 0 0.6rem 0; font-size: 0.86rem; font-weight: 700;">ROUND ${m.round} OF 3</h5>
         <div class="form-grid-2">
           <!-- Choice A -->
           <div style="background: rgba(0,0,0,0.25); padding: 0.65rem; border-radius: 8px;">
@@ -1612,11 +1596,11 @@
                   <span>No photo selected</span>
                 </div>
               </div>
-              <label class="btn-admin-choose-file" title="Select photo from local device without server upload">
+              <label class="btn-admin-choose-file" title="Upload photo to Supabase Storage">
                 <span>📁 Upload Photo A</span>
                 <input type="file" accept="image/*" class="admin-upload-memory-photo" data-round="${m.round}" data-choice="a" style="display: none;" />
               </label>
-              <div class="picker-badge-instant">⚡ Local File API • URL.createObjectURL()</div>
+              <div class="picker-badge-instant">⚡ Supabase Storage • Birthday-assets</div>
               <input type="text" class="form-input m-photo-a" data-round="${m.round}" value="${escapeHtml(m.photoA || '')}" placeholder="Or paste Photo A URL..." style="font-size: 0.72rem; margin-top: 0.25rem; width: 100%;" />
             </div>
 
@@ -1644,11 +1628,11 @@
                   <span>No photo selected</span>
                 </div>
               </div>
-              <label class="btn-admin-choose-file" title="Select photo from local device without server upload">
+              <label class="btn-admin-choose-file" title="Upload photo to Supabase Storage">
                 <span>📁 Upload Photo B</span>
                 <input type="file" accept="image/*" class="admin-upload-memory-photo" data-round="${m.round}" data-choice="b" style="display: none;" />
               </label>
-              <div class="picker-badge-instant">⚡ Local File API • URL.createObjectURL()</div>
+              <div class="picker-badge-instant">⚡ Supabase Storage • Birthday-assets</div>
               <input type="text" class="form-input m-photo-b" data-round="${m.round}" value="${escapeHtml(m.photoB || '')}" placeholder="Or paste Photo B URL..." style="font-size: 0.72rem; margin-top: 0.25rem; width: 100%;" />
             </div>
 
@@ -1950,11 +1934,14 @@
       const pEl = document.querySelector(`.q-prompt-input[data-qid="${q.id}"]`);
       if (pEl) q.prompt = pEl.value.trim();
 
-      if (q.type === "multiple_choice") {
+      if (q.options && q.options.length > 0) {
         const optEls = document.querySelectorAll(`.q-opt-input[data-qid="${q.id}"]`);
         optEls.forEach((el, idx) => {
           if (q.options[idx] !== undefined) q.options[idx] = el.value.trim();
         });
+      }
+
+      if (q.type === "multiple_choice") {
         const cEl = document.querySelector(`.q-correct-index[data-qid="${q.id}"]`);
         if (cEl) q.correctIndex = parseInt(cEl.value, 10) || 0;
         const rcEl = document.querySelector(`.q-reaction-correct[data-qid="${q.id}"]`);
@@ -2050,6 +2037,17 @@
         });
 
         // 2. Quiz Questions
+        try {
+          const activeIds = storyData.questions.map(q => q.id);
+          const { data: allQ } = await client.from("our_story_quiz_questions").select("id");
+          if (allQ && allQ.length > 0) {
+            const toDelete = allQ.filter(row => !activeIds.includes(row.id)).map(r => r.id);
+            if (toDelete.length > 0) {
+              await client.from("our_story_quiz_questions").delete().in("id", toDelete);
+            }
+          }
+        } catch (_) {}
+
         for (let idx = 0; idx < storyData.questions.length; idx++) {
           const q = storyData.questions[idx];
           await client.from("our_story_quiz_questions").upsert({

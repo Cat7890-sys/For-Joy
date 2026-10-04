@@ -973,6 +973,11 @@ function openAdminLoginForm(reasonMessage) {
   }
 }
 
+if (typeof window !== "undefined") {
+  window.isCurrentUserAdmin = isCurrentUserAdmin;
+  window.openAdminLoginForm = openAdminLoginForm;
+}
+
 /**
  * Initialize Supabase Auth listener and retrieve existing session
  */
