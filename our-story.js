@@ -377,9 +377,27 @@
   }
 
   // ENVELOPE INTERACTION
+  function resetEnvelope() {
+    const envWrapper = document.getElementById("envelopeWrapper");
+    const letterModal = document.getElementById("letterModalOverlay");
+    const storyOverlay = document.getElementById("ourStoryOverlay");
+    if (envWrapper) {
+      envWrapper.classList.remove("opening");
+    }
+    if (letterModal) {
+      letterModal.classList.remove("active");
+      letterModal.style.display = "none";
+    }
+    if (storyOverlay) {
+      storyOverlay.classList.remove("active");
+      storyOverlay.style.display = "none";
+    }
+  }
+
   function initEnvelope() {
     const envWrapper = document.getElementById("envelopeWrapper");
     const letterModal = document.getElementById("letterModalOverlay");
+    const letterBackdrop = document.getElementById("letterBackdrop");
     const letterCloseBtn = document.getElementById("letterCloseBtn");
     const openOurStoryBtn = document.getElementById("openOurStoryBtn");
     const storyOverlay = document.getElementById("ourStoryOverlay");
@@ -388,7 +406,14 @@
 
     if (!envWrapper || !letterModal) return;
 
-    envWrapper.addEventListener("click", () => {
+    if (envWrapper.dataset.bound === "true") {
+      resetEnvelope();
+      return;
+    }
+    envWrapper.dataset.bound = "true";
+
+    function triggerEnvelopeOpen() {
+      if (envWrapper.classList.contains("opening")) return;
       envWrapper.classList.add("opening");
 
       setTimeout(() => {
@@ -396,16 +421,29 @@
         void letterModal.offsetWidth;
         letterModal.classList.add("active");
       }, 700);
+    }
+
+    envWrapper.addEventListener("click", triggerEnvelopeOpen);
+    envWrapper.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        triggerEnvelopeOpen();
+      }
     });
 
+    function closeLetter() {
+      letterModal.classList.remove("active");
+      setTimeout(() => {
+        letterModal.style.display = "none";
+        envWrapper.classList.remove("opening");
+      }, 400);
+    }
+
     if (letterCloseBtn) {
-      letterCloseBtn.addEventListener("click", () => {
-        letterModal.classList.remove("active");
-        setTimeout(() => {
-          letterModal.style.display = "none";
-          envWrapper.classList.remove("opening");
-        }, 400);
-      });
+      letterCloseBtn.addEventListener("click", closeLetter);
+    }
+    if (letterBackdrop) {
+      letterBackdrop.addEventListener("click", closeLetter);
     }
 
     if (openOurStoryBtn) {
@@ -1318,6 +1356,9 @@
   if (typeof window !== "undefined") {
     window.loadStoryData = loadStoryData;
     window.setupOurStoryAdminControls = setupOurStoryAdminControls;
+    window.initOurStoryEnvelope = initEnvelope;
+    window.resetOurStoryEnvelope = resetEnvelope;
+    window.startOurStoryExperience = startOurStoryExperience;
   }
 
 })();

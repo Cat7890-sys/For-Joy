@@ -54,47 +54,83 @@
     };
   }
 
-  // Parametric Heart 3D Formulation (Volumetric 3D heart distribution)
+  // Parametric Heart 3D Formulation (Sculpted Defined Heart Shape, +30% particles, 27% pink)
   function createHeartParticles() {
     particles.length = 0;
-    const particleCount = window.innerWidth < 640 ? 1200 : 2100;
+    // 30% more particles: 1560 on mobile, 2730 on desktop
+    const baseCount = window.innerWidth < 640 ? 1200 : 2100;
+    const particleCount = Math.round(baseCount * 1.30);
 
     for (let i = 0; i < particleCount; i++) {
-      // Angle around heart perimeter
-      const t = Math.random() * Math.PI * 2;
+      // 1. Angle sampling biased to emphasize the distinctive heart curves:
+      // sharp bottom tip (t ~ PI), deep top cleft (t ~ 0), and rounded outer lobes
+      let t;
+      const angleBias = Math.random();
+      if (angleBias < 0.28) {
+        // Sharp bottom point
+        t = Math.PI + (Math.random() - 0.5) * 0.65;
+      } else if (angleBias < 0.54) {
+        // Deep top cleft dip
+        t = (Math.random() > 0.5 ? 0 : Math.PI * 2) + (Math.random() - 0.5) * 0.75;
+      } else {
+        // Upper lobes and outer curves
+        t = Math.random() * Math.PI * 2;
+      }
 
-      // Classic parametric heart coordinates
+      // Classic parametric heart equations
       const x0 = 16 * Math.pow(Math.sin(t), 3);
       const y0 = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
 
-      // Thickness profile: thicker at top lobes and tapers to bottom point
-      const normY = (y0 + 17) / 29; // 0 (top) to 1 (bottom)
-      const maxThickness = Math.sin(normY * Math.PI) * 9.5 * (1 - normY * 0.45);
+      // Thickness profile: fuller at top lobes, tapering to a sharp clean tip at bottom
+      const normY = (y0 + 17) / 29; // 0 (top) to 1 (bottom tip)
+      const maxThickness = Math.sin(normY * Math.PI) * 8.5 * Math.pow(Math.max(0, 1 - normY * 0.62), 0.72);
 
-      // Depth distribution
+      // Concentration distribution:
+      // 78% of particles placed tightly on the outer perimeter contour shell (0.92 - 1.0)
+      // for an ultra-defined, crisp heart silhouette. 22% for subtle inner 3D volume.
+      const isOuterShell = (i % 100) < 78;
+      const shellFactor = isOuterShell
+        ? (0.92 + Math.random() * 0.08)
+        : (0.42 + Math.pow(Math.random(), 0.75) * 0.46);
+
       const zAngle = (Math.random() - 0.5) * Math.PI;
-      const radialDist = Math.random();
-      // Heavily bias towards outer shell for crisp 3D definition with soft interior volume
-      const shellFactor = radialDist > 0.4 ? (0.85 + Math.random() * 0.15) : Math.pow(radialDist, 0.6);
-
       const x = x0 * shellFactor;
       const y = y0 * shellFactor;
-      const z = Math.sin(zAngle) * maxThickness * shellFactor;
+      const z = Math.sin(zAngle) * maxThickness * (isOuterShell ? 0.94 : shellFactor);
 
       // Twinkle & oscillation
       const twinkleSpeed = Math.random() * 0.04 + 0.02;
       const twinklePhase = Math.random() * Math.PI * 2;
-      const size = Math.random() * 1.8 + 0.8;
+      const size = isOuterShell ? (Math.random() * 1.5 + 0.9) : (Math.random() * 1.2 + 0.6);
 
-      // Color palette: Glowing neon blues and radiant electric cyans
-      const colorRand = Math.random();
-      let r = 0, g = 217, b = 255;
-      if (colorRand > 0.75) {
-        // Bright white-cyan highlight
-        r = 190; g = 245; b = 255;
-      } else if (colorRand < 0.25) {
-        // Deep royal electric blue
-        r = 0; g = 110; b = 255;
+      // Color Palette: EXACTLY 27% PINK, 73% RADIANT CYAN & ELECTRIC BLUE
+      const isPink = (i % 100) < 27;
+      let r, g, b;
+
+      if (isPink) {
+        const pinkTone = Math.random();
+        if (pinkTone > 0.72) {
+          // Radiant pink-white highlight
+          r = 255; g = 205; b = 235;
+        } else if (pinkTone > 0.35) {
+          // Vivid neon hot pink
+          r = 255; g = 42; b = 132;
+        } else {
+          // Glowing rose magenta
+          r = 255; g = 78; b = 168;
+        }
+      } else {
+        const blueTone = Math.random();
+        if (blueTone > 0.75) {
+          // Bright white-cyan highlight
+          r = 190; g = 245; b = 255;
+        } else if (blueTone < 0.28) {
+          // Deep royal electric blue
+          r = 0; g = 110; b = 255;
+        } else {
+          // Electric luminous cyan
+          r = 0; g = 217; b = 255;
+        }
       }
 
       particles.push({
@@ -105,7 +141,7 @@
         r: r,
         g: g,
         b: b,
-        baseAlpha: Math.random() * 0.45 + 0.55,
+        baseAlpha: isOuterShell ? (Math.random() * 0.35 + 0.65) : (Math.random() * 0.35 + 0.45),
         alpha: 1,
         twinkleSpeed: twinkleSpeed,
         twinklePhase: twinklePhase
@@ -203,6 +239,10 @@
 
     if (!ctx || !canvas) return;
 
+    if (width <= 10 || height <= 10) {
+      resizeCanvas();
+    }
+
     const elapsed = (now - startTime) / 1000;
     const idleTime = now - lastInteraction;
 
@@ -255,10 +295,11 @@
     const fov = 380;
     const cameraZ = 320;
 
-    // Ambient radial light emanating from heart center
+    // Ambient radial light emanating from heart center (soft pink and cyan atmosphere)
     const ambientRadial = ctx.createRadialGradient(centerX, centerY, 10, centerX, centerY, scale * 26);
-    ambientRadial.addColorStop(0, "rgba(0, 217, 255, 0.22)");
-    ambientRadial.addColorStop(0.45, "rgba(0, 100, 255, 0.08)");
+    ambientRadial.addColorStop(0, "rgba(0, 217, 255, 0.20)");
+    ambientRadial.addColorStop(0.32, "rgba(255, 42, 132, 0.11)");
+    ambientRadial.addColorStop(0.65, "rgba(0, 110, 255, 0.05)");
     ambientRadial.addColorStop(1, "rgba(2, 5, 14, 0)");
     ctx.fillStyle = ambientRadial;
     ctx.fillRect(0, 0, width, height);
@@ -361,6 +402,9 @@
 
     createHeartParticles();
     resizeCanvas();
+    requestAnimationFrame(() => {
+      resizeCanvas();
+    });
 
     if (!resizeAttached) {
       resizeAttached = true;

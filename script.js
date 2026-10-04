@@ -4159,6 +4159,15 @@ function initChapterSystem() {
   if (chapterBtn3) chapterBtn3.addEventListener("click", () => showChapter(3));
   if (chapterBtn4) chapterBtn4.addEventListener("click", () => showChapter(4));
 
+  // Automatically bind any button with data-page attribute for seamless in-page SPA navigation
+  document.querySelectorAll("[data-page]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const p = parseInt(btn.getAttribute("data-page"), 10);
+      if (p) showChapter(p);
+    });
+  });
+
   // Turn to Next / Previous Chapter buttons (connecting both page continue banners & headers)
   if (goToPage2Btn) {
     goToPage2Btn.addEventListener("click", () => showChapter(2));
@@ -4167,7 +4176,10 @@ function initChapterSystem() {
     goToPage3Btn.addEventListener("click", () => showChapter(3));
   }
   if (goToFinaleBtn) {
-    goToFinaleBtn.addEventListener("click", () => showChapter(4));
+    goToFinaleBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      showChapter(4);
+    });
   }
   if (backToPage1Btn) {
     backToPage1Btn.addEventListener("click", () => showChapter(1));
@@ -4221,10 +4233,22 @@ function showChapter(chapterNum, autoScroll = true) {
   const btn3 = document.getElementById("chapterBtn3") || document.getElementById("navChapterBtn3");
   const btn4 = document.getElementById("chapterBtn4") || document.getElementById("navChapterBtn4");
 
-  if (page1) page1.style.display = (chapterNum === 1) ? "block" : "none";
-  if (page2) page2.style.display = (chapterNum === 2) ? "block" : "none";
-  if (page3) page3.style.display = (chapterNum === 3) ? "block" : "none";
-  if (page4) page4.style.display = (chapterNum === 4) ? "block" : "none";
+  if (page1) {
+    page1.style.display = (chapterNum === 1) ? "block" : "none";
+    page1.classList.toggle("active", chapterNum === 1);
+  }
+  if (page2) {
+    page2.style.display = (chapterNum === 2) ? "block" : "none";
+    page2.classList.toggle("active", chapterNum === 2);
+  }
+  if (page3) {
+    page3.style.display = (chapterNum === 3) ? "block" : "none";
+    page3.classList.toggle("active", chapterNum === 3);
+  }
+  if (page4) {
+    page4.style.display = (chapterNum === 4) ? "flex" : "none";
+    page4.classList.toggle("active", chapterNum === 4);
+  }
 
   if (btn1) btn1.classList.toggle("active", chapterNum === 1);
   if (btn2) btn2.classList.toggle("active", chapterNum === 2);
@@ -4243,7 +4267,16 @@ function showChapter(chapterNum, autoScroll = true) {
   } else if (chapterNum === 3) {
     renderLoveNotes();
   } else if (chapterNum === 4) {
-    initFinaleScene();
+    // Initialize Extra section: 3D particle heart & envelope sequence directly within main page container
+    requestAnimationFrame(() => {
+      initFinaleScene();
+      if (typeof window.initOurStoryEnvelope === "function") {
+        window.initOurStoryEnvelope();
+      }
+      if (typeof window.resetOurStoryEnvelope === "function") {
+        window.resetOurStoryEnvelope();
+      }
+    });
   }
 
   // Smooth scroll without interfering with normal user scrolling
@@ -7300,34 +7333,61 @@ function resetPortalSpark(index, initial) {
 }
 
 function createExtra3DHeartParticles() {
-  const particleCount = window.innerWidth < 640 ? 1200 : 2100;
+  const baseCount = window.innerWidth < 640 ? 1200 : 2100;
+  const particleCount = Math.round(baseCount * 1.30);
   const sparkCount = 38;
   extra3DParticles = [];
 
   for (let i = 0; i < particleCount; i++) {
-    const t = Math.random() * Math.PI * 2;
+    let t;
+    const angleBias = Math.random();
+    if (angleBias < 0.28) {
+      t = Math.PI + (Math.random() - 0.5) * 0.65;
+    } else if (angleBias < 0.54) {
+      t = (Math.random() > 0.5 ? 0 : Math.PI * 2) + (Math.random() - 0.5) * 0.75;
+    } else {
+      t = Math.random() * Math.PI * 2;
+    }
+
     const x0 = 16 * Math.pow(Math.sin(t), 3);
     const y0 = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
     const normY = (y0 + 17) / 29;
-    const maxThickness = Math.sin(normY * Math.PI) * 9.5 * (1 - normY * 0.45);
-    const zAngle = (Math.random() - 0.5) * Math.PI;
-    const radialDist = Math.random();
-    const shellFactor = radialDist > 0.4 ? (0.85 + Math.random() * 0.15) : Math.pow(radialDist, 0.6);
+    const maxThickness = Math.sin(normY * Math.PI) * 8.5 * Math.pow(Math.max(0, 1 - normY * 0.62), 0.72);
+    const isOuterShell = (i % 100) < 78;
+    const shellFactor = isOuterShell
+      ? (0.92 + Math.random() * 0.08)
+      : (0.42 + Math.pow(Math.random(), 0.75) * 0.46);
 
+    const zAngle = (Math.random() - 0.5) * Math.PI;
     const x = x0 * shellFactor;
     const y = y0 * shellFactor;
-    const z = Math.sin(zAngle) * maxThickness * shellFactor;
+    const z = Math.sin(zAngle) * maxThickness * (isOuterShell ? 0.94 : shellFactor);
 
     const twinkleSpeed = Math.random() * 0.04 + 0.02;
     const twinklePhase = Math.random() * Math.PI * 2;
-    const size = Math.random() * 1.8 + 0.8;
+    const size = isOuterShell ? (Math.random() * 1.5 + 0.9) : (Math.random() * 1.2 + 0.6);
 
-    const colorRand = Math.random();
-    let r = 0, g = 217, b = 255;
-    if (colorRand > 0.75) {
-      r = 190; g = 245; b = 255;
-    } else if (colorRand < 0.25) {
-      r = 0; g = 110; b = 255;
+    // EXACTLY 27% PINK, 73% CYAN/BLUE
+    const isPink = (i % 100) < 27;
+    let r, g, b;
+    if (isPink) {
+      const pinkTone = Math.random();
+      if (pinkTone > 0.72) {
+        r = 255; g = 205; b = 235;
+      } else if (pinkTone > 0.35) {
+        r = 255; g = 42; b = 132;
+      } else {
+        r = 255; g = 78; b = 168;
+      }
+    } else {
+      const blueTone = Math.random();
+      if (blueTone > 0.75) {
+        r = 190; g = 245; b = 255;
+      } else if (blueTone < 0.28) {
+        r = 0; g = 110; b = 255;
+      } else {
+        r = 0; g = 217; b = 255;
+      }
     }
 
     extra3DParticles.push({
@@ -7341,7 +7401,7 @@ function createExtra3DHeartParticles() {
       r: r,
       g: g,
       b: b,
-      baseAlpha: Math.random() * 0.45 + 0.55,
+      baseAlpha: isOuterShell ? (Math.random() * 0.35 + 0.65) : (Math.random() * 0.35 + 0.45),
       alpha: 1,
       twinkleSpeed: twinkleSpeed,
       twinklePhase: twinklePhase

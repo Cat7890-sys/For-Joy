@@ -1426,3 +1426,39 @@
 .close-story-btn:hover {
   background: rgba(255, 255, 255, 0.18);
 }
+
+/* Finale Closing Sentiment from finale.html */
+.terminal-container {
+  width: 100%;
+  max-width: 580px;
+  z-index: 10;
+  margin: 0.75rem auto;
+  user-select: text;
+}
+
+.footer-quote {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
+  letter-spacing: 0.5px;
+  margin-top: 0.6rem;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.footer-quote .heart-icon {
+  color: #00d9ff;
+  display: inline-block;
+  animation: heartIconBeat 1.4s ease-in-out infinite;
+}
+
+@keyframes heartIconBeat {
+  0%, 100% { transform: scale(1); }
+  14% { transform: scale(1.22); }
+  28% { transform: scale(1.05); }
+  42% { transform: scale(1.2); }
+  56% { transform: scale(1); }
+}
