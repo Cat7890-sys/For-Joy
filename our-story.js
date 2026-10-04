@@ -836,10 +836,488 @@
     }
   }
 
+  // Escape HTML helper
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  // ADMIN PORTAL INTEGRATION
+  function setupOurStoryAdminControls() {
+    const saveBtn = document.getElementById("adminSaveOurStoryBtn");
+    const refreshBtn = document.getElementById("adminRefreshOurStoryBtn");
+    const refreshSubmissionsBtn = document.getElementById("adminRefreshSubmissionsBtn");
+    const addQuestionBtn = document.getElementById("adminAddQuizQuestionBtn");
+    const adminTabBtn = document.querySelector('[data-tab="tabOurStoryAdmin"]');
+
+    if (adminTabBtn) {
+      adminTabBtn.addEventListener("click", () => {
+        populateAdminFields();
+        loadSubmissionsForAdmin();
+      });
+    }
+
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", async () => {
+        showAdminStatus("Refreshing from Supabase...", "loading");
+        await loadStoryData();
+        populateAdminFields();
+        await loadSubmissionsForAdmin();
+        showAdminStatus("Our Story data refreshed! ✨", "success");
+      });
+    }
+
+    if (refreshSubmissionsBtn) {
+      refreshSubmissionsBtn.addEventListener("click", () => {
+        loadSubmissionsForAdmin();
+      });
+    }
+
+    if (addQuestionBtn) {
+      addQuestionBtn.addEventListener("click", () => {
+        const newId = "q_" + Date.now();
+        storyData.questions.push({
+          id: newId,
+          type: "multiple_choice",
+          prompt: "New quiz question...",
+          options: ["Option A", "Option B", "Option C", "Option D"],
+          correctIndex: 0,
+          reactionCorrect: "You remembered! ✨",
+          reactionWrong: "Nahhh, you forgot that? 😭"
+        });
+        renderAdminQuizQuestions();
+      });
+    }
+
+    if (saveBtn) {
+      saveBtn.addEventListener("click", handleSaveOurStoryAdmin);
+    }
+
+    populateAdminFields();
+    loadSubmissionsForAdmin();
+  }
+
+  function showAdminStatus(msg, type = "success") {
+    const el = document.getElementById("adminOurStoryStatus");
+    if (!el) return;
+    el.style.display = "block";
+    el.className = "storage-upload-status " + (type === "loading" ? "loading" : type === "error" ? "error" : "success");
+    el.textContent = msg;
+    if (type !== "loading") {
+      setTimeout(() => {
+        el.style.display = "none";
+      }, 4000);
+    }
+  }
+
+  function populateAdminFields() {
+    const headingInput = document.getElementById("storyLetterHeadingInput");
+    const btnTextInput = document.getElementById("storyLetterButtonTextInput");
+    const msgInput = document.getElementById("storyLetterMessageInput");
+    const subPromptInput = document.getElementById("storyLetterSubPromptInput");
+    const finalPromptInput = document.getElementById("storyFinalQuestionPromptInput");
+
+    if (headingInput) headingInput.value = storyData.settings.letterHeading || "";
+    if (btnTextInput) btnTextInput.value = storyData.settings.letterButtonText || "";
+    if (msgInput) msgInput.value = storyData.settings.letterMessage || "";
+    if (subPromptInput) subPromptInput.value = storyData.settings.letterSubPrompt || "";
+    if (finalPromptInput) finalPromptInput.value = storyData.settings.finalQuestionPrompt || "";
+
+    renderAdminQuizQuestions();
+    renderAdminMemoryRounds();
+    renderAdminWrappedStats();
+    renderAdminTimeline();
+  }
+
+  function renderAdminQuizQuestions() {
+    const container = document.getElementById("adminQuizQuestionsList");
+    const countEl = document.getElementById("adminQuizCount");
+    if (countEl) countEl.textContent = String(storyData.questions ? storyData.questions.length : 0);
+    if (!container) return;
+
+    container.innerHTML = storyData.questions.map((q, idx) => {
+      let optionsHtml = "";
+      if (q.type === "multiple_choice") {
+        optionsHtml = `
+          <div class="form-grid-2" style="margin-top: 0.4rem;">
+            ${(q.options || []).map((opt, oIdx) => `
+              <div class="form-group" style="margin-bottom: 0.35rem;">
+                <label style="font-size: 0.72rem;">Option ${String.fromCharCode(65 + oIdx)} ${q.correctIndex === oIdx ? "(Correct)" : ""}</label>
+                <input type="text" class="form-input q-opt-input" data-qid="${q.id}" data-oidx="${oIdx}" value="${escapeHtml(opt)}" />
+              </div>
+            `).join("")}
+          </div>
+          <div class="form-grid-2" style="margin-top: 0.4rem;">
+            <div class="form-group">
+              <label style="font-size: 0.72rem;">Correct Option (0 for A, 1 for B, 2 for C, 3 for D)</label>
+              <input type="number" min="0" max="3" class="form-input q-correct-index" data-qid="${q.id}" value="${q.correctIndex ?? 0}" />
+            </div>
+            <div class="form-group">
+              <label style="font-size: 0.72rem;">Correct Reaction</label>
+              <input type="text" class="form-input q-reaction-correct" data-qid="${q.id}" value="${escapeHtml(q.reactionCorrect || '')}" />
+            </div>
+          </div>
+        `;
+      } else if (q.type === "photo_order") {
+        optionsHtml = `
+          <div class="form-grid-2" style="margin-top: 0.4rem;">
+            <div class="form-group">
+              <label style="font-size: 0.72rem;">Photo A URL & Label</label>
+              <input type="text" class="form-input q-photo-a" data-qid="${q.id}" value="${escapeHtml(q.photoA || '')}" placeholder="Photo A URL" style="margin-bottom: 0.3rem;" />
+              <input type="text" class="form-input q-label-a" data-qid="${q.id}" value="${escapeHtml(q.labelA || '')}" placeholder="Label A" />
+            </div>
+            <div class="form-group">
+              <label style="font-size: 0.72rem;">Photo B URL & Label</label>
+              <input type="text" class="form-input q-photo-b" data-qid="${q.id}" value="${escapeHtml(q.photoB || '')}" placeholder="Photo B URL" style="margin-bottom: 0.3rem;" />
+              <input type="text" class="form-input q-label-b" data-qid="${q.id}" value="${escapeHtml(q.labelB || '')}" placeholder="Label B" />
+            </div>
+          </div>
+          <div class="form-grid-2" style="margin-top: 0.4rem;">
+            <div class="form-group">
+              <label style="font-size: 0.72rem;">Which Happened First? (A or B)</label>
+              <input type="text" class="form-input q-correct-answer" data-qid="${q.id}" value="${escapeHtml(q.correctAnswer || 'A')}" />
+            </div>
+            <div class="form-group">
+              <label style="font-size: 0.72rem;">Correct Reaction</label>
+              <input type="text" class="form-input q-reaction-correct" data-qid="${q.id}" value="${escapeHtml(q.reactionCorrect || '')}" />
+            </div>
+          </div>
+        `;
+      } else {
+        optionsHtml = `
+          <div class="form-group" style="margin-top: 0.4rem;">
+            <label style="font-size: 0.72rem;">Reaction Message</label>
+            <input type="text" class="form-input q-reaction" data-qid="${q.id}" value="${escapeHtml(q.reaction || '')}" />
+          </div>
+        `;
+      }
+
+      return `
+        <div class="admin-card" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 0.85rem;" data-qid="${q.id}">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span style="font-weight: 700; color: #ff7aa2; font-size: 0.82rem;">Q${idx + 1} • ${q.type.toUpperCase()}</span>
+            <button type="button" class="secondary-btn danger-btn delete-quiz-q-btn" data-qid="${q.id}" style="padding: 0.2rem 0.55rem; font-size: 0.72rem;">Delete</button>
+          </div>
+          <div class="form-group">
+            <label style="font-size: 0.75rem;">Question Prompt</label>
+            <input type="text" class="form-input q-prompt-input" data-qid="${q.id}" value="${escapeHtml(q.prompt || '')}" />
+          </div>
+          ${optionsHtml}
+        </div>
+      `;
+    }).join("");
+
+    container.querySelectorAll(".delete-quiz-q-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const qid = btn.getAttribute("data-qid");
+        storyData.questions = storyData.questions.filter(q => q.id !== qid);
+        renderAdminQuizQuestions();
+      });
+    });
+  }
+
+  function renderAdminMemoryRounds() {
+    const container = document.getElementById("adminMemoryRoundsList");
+    if (!container) return;
+
+    container.innerHTML = storyData.memoryRounds.map((m) => `
+      <div class="admin-card" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 0.85rem;" data-round="${m.round}">
+        <h5 style="color: #5ef3ff; margin: 0 0 0.6rem 0; font-size: 0.86rem;">ROUND ${m.round} OF 5</h5>
+        <div class="form-grid-2">
+          <!-- Choice A -->
+          <div style="background: rgba(0,0,0,0.25); padding: 0.6rem; border-radius: 8px;">
+            <span style="font-weight: 700; color: #ff7aa2; font-size: 0.78rem;">Memory A</span>
+            <div class="form-group" style="margin-top: 0.35rem;">
+              <label style="font-size: 0.72rem;">Title A</label>
+              <input type="text" class="form-input m-title-a" data-round="${m.round}" value="${escapeHtml(m.titleA || '')}" />
+            </div>
+            <div class="form-group">
+              <label style="font-size: 0.72rem;">Photo A URL</label>
+              <input type="text" class="form-input m-photo-a" data-round="${m.round}" value="${escapeHtml(m.photoA || '')}" />
+            </div>
+            <div class="form-group">
+              <label style="font-size: 0.72rem;">Caption A</label>
+              <input type="text" class="form-input m-caption-a" data-round="${m.round}" value="${escapeHtml(m.captionA || '')}" />
+            </div>
+          </div>
+          <!-- Choice B -->
+          <div style="background: rgba(0,0,0,0.25); padding: 0.6rem; border-radius: 8px;">
+            <span style="font-weight: 700; color: #5ef3ff; font-size: 0.78rem;">Memory B</span>
+            <div class="form-group" style="margin-top: 0.35rem;">
+              <label style="font-size: 0.72rem;">Title B</label>
+              <input type="text" class="form-input m-title-b" data-round="${m.round}" value="${escapeHtml(m.titleB || '')}" />
+            </div>
+            <div class="form-group">
+              <label style="font-size: 0.72rem;">Photo B URL</label>
+              <input type="text" class="form-input m-photo-b" data-round="${m.round}" value="${escapeHtml(m.photoB || '')}" />
+            </div>
+            <div class="form-group">
+              <label style="font-size: 0.72rem;">Caption B</label>
+              <input type="text" class="form-input m-caption-b" data-round="${m.round}" value="${escapeHtml(m.captionB || '')}" />
+            </div>
+          </div>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function renderAdminWrappedStats() {
+    const container = document.getElementById("adminWrappedStatsList");
+    if (!container) return;
+
+    container.innerHTML = storyData.stats.map(s => `
+      <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 0.75rem;" data-sid="${s.id}">
+        <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.4rem;">
+          <input type="text" class="form-input stat-icon-input" data-sid="${s.id}" value="${escapeHtml(s.icon || '❤️')}" style="width: 44px; text-align: center; font-size: 1.1rem; padding: 0.2rem;" />
+          <input type="text" class="form-input stat-label-input" data-sid="${s.id}" value="${escapeHtml(s.label || '')}" style="flex: 1; font-weight: 700;" placeholder="Label" />
+        </div>
+        <div class="form-group" style="margin-bottom: 0.4rem;">
+          <label style="font-size: 0.7rem;">Value / Number</label>
+          <input type="text" class="form-input stat-val-input" data-sid="${s.id}" value="${escapeHtml(s.value || '')}" />
+        </div>
+        <div class="form-group">
+          <label style="font-size: 0.7rem;">Description</label>
+          <input type="text" class="form-input stat-desc-input" data-sid="${s.id}" value="${escapeHtml(s.description || '')}" />
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function renderAdminTimeline() {
+    const container = document.getElementById("adminTimelineList");
+    if (!container) return;
+
+    container.innerHTML = storyData.timeline.map((t) => `
+      <div class="admin-card" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 0.85rem;" data-tid="${t.id}">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label style="font-size: 0.72rem;">Era Title</label>
+            <input type="text" class="form-input t-title-input" data-tid="${t.id}" value="${escapeHtml(t.eraTitle || '')}" />
+          </div>
+          <div class="form-group">
+            <label style="font-size: 0.72rem;">Date / Subtitle</label>
+            <input type="text" class="form-input t-date-input" data-tid="${t.id}" value="${escapeHtml(t.eraDate || '')}" />
+          </div>
+        </div>
+        <div class="form-group" style="margin-top: 0.35rem;">
+          <label style="font-size: 0.72rem;">Tagline</label>
+          <input type="text" class="form-input t-tagline-input" data-tid="${t.id}" value="${escapeHtml(t.tagline || '')}" />
+        </div>
+        <div class="form-group" style="margin-top: 0.35rem;">
+          <label style="font-size: 0.72rem;">Description</label>
+          <textarea class="form-textarea t-desc-input" rows="2" data-tid="${t.id}">${escapeHtml(t.description || '')}</textarea>
+        </div>
+        <div class="form-group" style="margin-top: 0.35rem;">
+          <label style="font-size: 0.72rem;">Photo URLs (comma separated)</label>
+          <input type="text" class="form-input t-photos-input" data-tid="${t.id}" value="${escapeHtml((t.photos || []).join(', '))}" />
+        </div>
+      </div>
+    `).join("");
+  }
+
+  async function loadSubmissionsForAdmin() {
+    const container = document.getElementById("adminSubmissionsList");
+    if (!container) return;
+
+    container.innerHTML = `<p style="color: #94a3b8; font-size: 0.82rem; margin: 0;">Loading responses from Supabase...</p>`;
+
+    let responses = [];
+    const client = getSupabase();
+    if (client) {
+      try {
+        const { data, error } = await client
+          .from("our_story_final_responses")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (data && Array.isArray(data)) {
+          responses = data;
+        }
+      } catch (_) {}
+    }
+
+    if (responses.length === 0) {
+      try {
+        responses = JSON.parse(localStorage.getItem("our_story_my_responses_v1") || "[]").map(r => ({
+          response_text: r.text,
+          created_at: r.timestamp
+        }));
+      } catch (_) {}
+    }
+
+    if (responses.length === 0) {
+      container.innerHTML = `<p style="color: #94a3b8; font-size: 0.82rem; margin: 0;">No responses submitted yet.</p>`;
+      return;
+    }
+
+    container.innerHTML = responses.map((r, i) => `
+      <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 0.65rem 0.85rem; margin-bottom: 0.5rem; border-left: 3px solid #ff2a7a;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+          <span style="font-weight: 700; color: #ff85c0; font-size: 0.78rem;">Submission #${responses.length - i}</span>
+          <span style="color: #94a3b8; font-size: 0.72rem;">${r.created_at ? new Date(r.created_at).toLocaleString() : 'Recent'}</span>
+        </div>
+        <p style="color: #ffffff; font-size: 0.85rem; margin: 0; line-height: 1.4; white-space: pre-wrap;">“${escapeHtml(r.response_text || '')}”</p>
+      </div>
+    `).join("");
+  }
+
+  async function handleSaveOurStoryAdmin() {
+    showAdminStatus("Saving Our Story changes to Supabase...", "loading");
+
+    const headingInput = document.getElementById("storyLetterHeadingInput");
+    const btnTextInput = document.getElementById("storyLetterButtonTextInput");
+    const msgInput = document.getElementById("storyLetterMessageInput");
+    const subPromptInput = document.getElementById("storyLetterSubPromptInput");
+    const finalPromptInput = document.getElementById("storyFinalQuestionPromptInput");
+
+    if (headingInput) storyData.settings.letterHeading = headingInput.value.trim();
+    if (btnTextInput) storyData.settings.letterButtonText = btnTextInput.value.trim();
+    if (msgInput) storyData.settings.letterMessage = msgInput.value.trim();
+    if (subPromptInput) storyData.settings.letterSubPrompt = subPromptInput.value.trim();
+    if (finalPromptInput) storyData.settings.finalQuestionPrompt = finalPromptInput.value.trim();
+
+    // Read Quiz Questions
+    storyData.questions.forEach(q => {
+      const pEl = document.querySelector(`.q-prompt-input[data-qid="${q.id}"]`);
+      if (pEl) q.prompt = pEl.value.trim();
+
+      if (q.type === "multiple_choice") {
+        const optEls = document.querySelectorAll(`.q-opt-input[data-qid="${q.id}"]`);
+        optEls.forEach((el, idx) => {
+          if (q.options[idx] !== undefined) q.options[idx] = el.value.trim();
+        });
+        const cEl = document.querySelector(`.q-correct-index[data-qid="${q.id}"]`);
+        if (cEl) q.correctIndex = parseInt(cEl.value, 10) || 0;
+        const rcEl = document.querySelector(`.q-reaction-correct[data-qid="${q.id}"]`);
+        if (rcEl) q.reactionCorrect = rcEl.value.trim();
+      } else if (q.type === "photo_order") {
+        const paEl = document.querySelector(`.q-photo-a[data-qid="${q.id}"]`);
+        const laEl = document.querySelector(`.q-label-a[data-qid="${q.id}"]`);
+        const pbEl = document.querySelector(`.q-photo-b[data-qid="${q.id}"]`);
+        const lbEl = document.querySelector(`.q-label-b[data-qid="${q.id}"]`);
+        const caEl = document.querySelector(`.q-correct-answer[data-qid="${q.id}"]`);
+        const rcEl = document.querySelector(`.q-reaction-correct[data-qid="${q.id}"]`);
+        if (paEl) q.photoA = paEl.value.trim();
+        if (laEl) q.labelA = laEl.value.trim();
+        if (pbEl) q.photoB = pbEl.value.trim();
+        if (lbEl) q.labelB = lbEl.value.trim();
+        if (caEl) q.correctAnswer = caEl.value.trim();
+        if (rcEl) q.reactionCorrect = rcEl.value.trim();
+      } else {
+        const rEl = document.querySelector(`.q-reaction[data-qid="${q.id}"]`);
+        if (rEl) q.reaction = rEl.value.trim();
+      }
+    });
+
+    // Read Memory Rounds
+    storyData.memoryRounds.forEach(m => {
+      const ta = document.querySelector(`.m-title-a[data-round="${m.round}"]`);
+      const pa = document.querySelector(`.m-photo-a[data-round="${m.round}"]`);
+      const ca = document.querySelector(`.m-caption-a[data-round="${m.round}"]`);
+      const tb = document.querySelector(`.m-title-b[data-round="${m.round}"]`);
+      const pb = document.querySelector(`.m-photo-b[data-round="${m.round}"]`);
+      const cb = document.querySelector(`.m-caption-b[data-round="${m.round}"]`);
+      if (ta) m.titleA = ta.value.trim();
+      if (pa) m.photoA = pa.value.trim();
+      if (ca) m.captionA = ca.value.trim();
+      if (tb) m.titleB = tb.value.trim();
+      if (pb) m.photoB = pb.value.trim();
+      if (cb) m.captionB = cb.value.trim();
+    });
+
+    // Read Stats
+    storyData.stats.forEach(s => {
+      const iEl = document.querySelector(`.stat-icon-input[data-sid="${s.id}"]`);
+      const lEl = document.querySelector(`.stat-label-input[data-sid="${s.id}"]`);
+      const vEl = document.querySelector(`.stat-val-input[data-sid="${s.id}"]`);
+      const dEl = document.querySelector(`.stat-desc-input[data-sid="${s.id}"]`);
+      if (iEl) s.icon = iEl.value.trim();
+      if (lEl) s.label = lEl.value.trim();
+      if (vEl) s.value = vEl.value.trim();
+      if (dEl) s.description = dEl.value.trim();
+    });
+
+    // Read Timeline
+    storyData.timeline.forEach(t => {
+      const ti = document.querySelector(`.t-title-input[data-tid="${t.id}"]`);
+      const di = document.querySelector(`.t-date-input[data-tid="${t.id}"]`);
+      const tg = document.querySelector(`.t-tagline-input[data-tid="${t.id}"]`);
+      const de = document.querySelector(`.t-desc-input[data-tid="${t.id}"]`);
+      const ph = document.querySelector(`.t-photos-input[data-tid="${t.id}"]`);
+      if (ti) t.eraTitle = ti.value.trim();
+      if (di) t.eraDate = di.value.trim();
+      if (tg) t.tagline = tg.value.trim();
+      if (de) t.description = de.value.trim();
+      if (ph) {
+        t.photos = ph.value.split(',').map(s => s.trim()).filter(Boolean);
+      }
+    });
+
+    // Save locally
+    try {
+      localStorage.setItem("our_story_content_v1", JSON.stringify(storyData));
+    } catch (_) {}
+
+    applySettingsToDOM();
+
+    // Save to Supabase
+    let sbSuccess = false;
+    const client = getSupabase();
+    if (client) {
+      try {
+        await client.from("our_story_settings").upsert({
+          id: 1,
+          letter_heading: storyData.settings.letterHeading,
+          letter_message: storyData.settings.letterMessage,
+          letter_button_text: storyData.settings.letterButtonText,
+          quiz_title: storyData.settings.quizTitle,
+          quiz_subtitle: storyData.settings.quizSubtitle,
+          final_question_prompt: storyData.settings.finalQuestionPrompt,
+          wrapped_title: storyData.settings.wrappedTitle,
+          wrapped_subtitle: storyData.settings.wrappedSubtitle,
+          final_quote: storyData.settings.finalQuote,
+          updated_at: new Date().toISOString()
+        });
+
+        // Upsert Memory rounds
+        for (const m of storyData.memoryRounds) {
+          await client.from("our_story_memory_rounds").upsert({
+            round_number: m.round,
+            title_a: m.titleA,
+            photo_a: m.photoA,
+            caption_a: m.captionA,
+            title_b: m.titleB,
+            photo_b: m.photoB,
+            caption_b: m.captionB
+          });
+        }
+
+        sbSuccess = true;
+      } catch (err) {
+        console.warn("[Our Story Admin] Supabase error:", err);
+      }
+    }
+
+    showAdminStatus(
+      sbSuccess ? "Our Story saved successfully to Supabase! ❤️" : "Our Story saved locally! (Supabase sync will retry)",
+      "success"
+    );
+  }
+
   // INIT
   document.addEventListener("DOMContentLoaded", () => {
     loadStoryData();
     initEnvelope();
+    setupOurStoryAdminControls();
   });
+
+  if (typeof window !== "undefined") {
+    window.loadStoryData = loadStoryData;
+    window.setupOurStoryAdminControls = setupOurStoryAdminControls;
+  }
 
 })();

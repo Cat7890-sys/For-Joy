@@ -7262,52 +7262,123 @@ let finaleTotalDragDistance = 0;
 let finaleLastInteractionTime = Date.now();
 let finaleTapPulseProgress = 0; // 0 to 1 bump for tap reaction
 
-// Particle Simulation Arrays
-let finaleParticles = [];
-let finaleTrails = [];
-let finaleStars = [];
-let finaleConstellationLines = [];
-let finaleBloomWaves = [];
-let finaleCenterBurstTime = 0;
+// ============================================================================
+// CHAPTER 4 — EXTRA: 3D PARTICLE HEART & GLOWING PLATFORM SIMULATION
+// ============================================================================
 
-function disposeFinaleThreeScene() {
-  if (finaleAnimId) {
-    cancelAnimationFrame(finaleAnimId);
-    finaleAnimId = null;
+let extra3DAnimId = null;
+let extra3DParticles = [];
+let extra3DPortalSparks = [];
+let extra3DRotY = 0;
+let extra3DRotX = 0;
+let extra3DTargetRotY = 0;
+let extra3DTargetRotX = 0;
+let extra3DRotVelY = 0.005;
+let extra3DRotVelX = 0;
+let extra3DIsDragging = false;
+let extra3DPrevMouseX = 0;
+let extra3DPrevMouseY = 0;
+let extra3DLastInteraction = performance.now();
+let extra3DResizeListener = null;
+let extra3DPointersAttached = false;
+let extra3DCanvas = null;
+let extra3DCtx = null;
+
+function resetPortalSpark(index, initial) {
+  const angle = Math.random() * Math.PI * 2;
+  const radius = Math.random() * 90;
+  extra3DPortalSparks[index] = {
+    x: Math.cos(angle) * radius,
+    y: (initial ? Math.random() * 100 : 0) + 120, // starts at platform level
+    z: Math.sin(angle) * (radius * 0.35),
+    vy: -(Math.random() * 1.8 + 0.9), // rising upward towards heart
+    vx: (Math.random() - 0.5) * 0.4,
+    alpha: Math.random() * 0.6 + 0.4,
+    size: Math.random() * 1.6 + 0.6,
+    life: Math.random() * 60 + 40
+  };
+}
+
+function createExtra3DHeartParticles() {
+  const particleCount = window.innerWidth < 640 ? 1200 : 2100;
+  const sparkCount = 38;
+  extra3DParticles = [];
+
+  for (let i = 0; i < particleCount; i++) {
+    const t = Math.random() * Math.PI * 2;
+    const x0 = 16 * Math.pow(Math.sin(t), 3);
+    const y0 = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+    const normY = (y0 + 17) / 29;
+    const maxThickness = Math.sin(normY * Math.PI) * 9.5 * (1 - normY * 0.45);
+    const zAngle = (Math.random() - 0.5) * Math.PI;
+    const radialDist = Math.random();
+    const shellFactor = radialDist > 0.4 ? (0.85 + Math.random() * 0.15) : Math.pow(radialDist, 0.6);
+
+    const x = x0 * shellFactor;
+    const y = y0 * shellFactor;
+    const z = Math.sin(zAngle) * maxThickness * shellFactor;
+
+    const twinkleSpeed = Math.random() * 0.04 + 0.02;
+    const twinklePhase = Math.random() * Math.PI * 2;
+    const size = Math.random() * 1.8 + 0.8;
+
+    const colorRand = Math.random();
+    let r = 0, g = 217, b = 255;
+    if (colorRand > 0.75) {
+      r = 190; g = 245; b = 255;
+    } else if (colorRand < 0.25) {
+      r = 0; g = 110; b = 255;
+    }
+
+    extra3DParticles.push({
+      origX: x,
+      origY: y,
+      origZ: z,
+      x: x,
+      y: y,
+      z: z,
+      size: size,
+      r: r,
+      g: g,
+      b: b,
+      baseAlpha: Math.random() * 0.45 + 0.55,
+      alpha: 1,
+      twinkleSpeed: twinkleSpeed,
+      twinklePhase: twinklePhase
+    });
   }
-  if (finaleResizeObserver) {
-    finaleResizeObserver.disconnect();
-    finaleResizeObserver = null;
-  }
-  window.removeEventListener("resize", finaleOnWindowResize);
-  finaleParticles = [];
-  finaleTrails = [];
-  finaleStars = [];
-  finaleConstellationLines = [];
-  finaleBloomWaves = [];
-  if (finaleCtx && finaleCanvasEl) {
-    finaleCtx.clearRect(0, 0, finaleCanvasEl.width, finaleCanvasEl.height);
+
+  extra3DPortalSparks = [];
+  for (let i = 0; i < sparkCount; i++) {
+    resetPortalSpark(i, true);
   }
 }
 
-function finaleOnWindowResize() {
-  if (!finaleCanvasEl) return;
+function resizeExtra3DCanvas() {
+  if (!extra3DCanvas || !extra3DCtx) return;
   const container = document.getElementById("finale3DHeartContainer");
-  if (!container) return;
+  const rect = extra3DCanvas.getBoundingClientRect();
+  const width = rect.width || (container ? container.clientWidth : 0) || Math.min(window.innerWidth - 32, 600);
+  const height = rect.height || (container ? container.clientHeight : 0) || 420;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const w = container.clientWidth || 540;
-  const h = container.clientHeight || 400;
-  finaleCanvasEl.width = w * dpr;
-  finaleCanvasEl.height = h * dpr;
-  finaleCanvasEl.style.width = `${w}px`;
-  finaleCanvasEl.style.height = `${h}px`;
-  if (finaleCtx) {
-    finaleCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  extra3DCanvas.width = width * dpr;
+  extra3DCanvas.height = height * dpr;
+  extra3DCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function disposeFinaleThreeScene() {
+  if (typeof window.stop3DExtraHeartScene === "function") {
+    window.stop3DExtraHeartScene();
   }
 }
 
 function initFinaleScene() {
-  const canvas = document.getElementById("finaleCanvas");
+  if (typeof window.start3DExtraHeartScene === "function") {
+    window.start3DExtraHeartScene();
+    return;
+  }
+  const canvas = document.getElementById("heartCanvas") || document.getElementById("finaleCanvas");
   const container = document.getElementById("finale3DHeartContainer");
   if (!canvas || !container) return;
 

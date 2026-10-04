@@ -24,6 +24,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="our-story.css" />
 </head>
 <body>
 
@@ -93,9 +94,9 @@
           <span class="chapter-pill-label" id="navChapterLabel3">Love Notes 💌</span>
         </button>
         <span class="chapter-nav-divider" aria-hidden="true"></span>
-        <button type="button" class="chapter-pill-btn" id="navChapterBtn4" data-page="4" aria-label="Chapter 4: The Finale">
+        <button type="button" class="chapter-pill-btn" id="navChapterBtn4" data-page="4" aria-label="Chapter 4: EXTRA">
           <span class="chapter-pill-num">4</span>
-          <span class="chapter-pill-label" id="navChapterLabel4">Finale ✨</span>
+          <span class="chapter-pill-label" id="navChapterLabel4">EXTRA ✨</span>
         </button>
       </div>
     </nav>
@@ -277,8 +278,8 @@
           <!-- Continue to Finale or Back to Celebration Banner -->
           <div class="page-continue-banner" id="page3ContinueBanner">
             <button type="button" class="continue-page-btn primary-finale-btn" id="goToFinaleBtn">
-              <span class="continue-text-title" id="page3ContinueTitle">Experience The Finale Scene ✨</span>
-              <span class="continue-arrow">A final message just for you →</span>
+              <span class="continue-text-title" id="page3ContinueTitle">Experience EXTRA ✨</span>
+              <span class="continue-arrow">Discover the hidden chapter →</span>
             </button>
             <button type="button" class="continue-page-btn secondary-continue" id="backToPage1From3Btn" style="margin-top: 0.75rem;">
               <span>← Back to Celebration</span>
@@ -288,59 +289,91 @@
       </section>
 
       <!-- ===================================================================
-           PAGE 4 / FINALE — THE BIRTHDAY EXPERIENCE FINALE
+           PAGE 4 — EXTRA (The 3D Heart, Glowing Envelope & Our Story Experience)
            =================================================================== -->
-      <section id="pageChapter4" class="experience-page finale-page" data-chapter="4" style="display: none;">
+      <section id="pageChapter4" class="experience-page finale-page extra-page" data-chapter="4" style="display: none;">
         <div class="finale-atmosphere-wrap">
           <!-- Ambient Glowing Blue Light Aura (Top & Bottom) -->
-          <div class="finale-glow-radial finale-ambient-aura-top"></div>
-          <div class="finale-glow-radial finale-ambient-aura-bottom"></div>
+          <div class="ambient-glow-top" aria-hidden="true"></div>
+          <div class="ambient-glow-bottom" aria-hidden="true"></div>
+          <div class="bg-starfield" aria-hidden="true"></div>
 
-          <!-- Main Cinematic Finale Card -->
+          <!-- Main Cinematic Extra Card -->
           <div class="finale-card-stage">
-            <!-- Top Chapter Controls: Back navigation & Standalone Page button -->
+            <!-- Top Chapter Controls: Back navigation -->
             <div class="finale-back-nav">
               <button type="button" class="finale-back-btn" id="backToPage3FromFinaleBtn" aria-label="Back to Love Notes">
                 <span id="finaleBackBtnText">← Back to Love Notes</span>
               </button>
-              <a href="finale.html" target="_blank" rel="noopener noreferrer" class="finale-standalone-btn" id="finaleStandaloneTopBtn" title="Open Fullscreen 3D Scene in a Dedicated Page">
-                <span class="standalone-btn-icon" aria-hidden="true">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                    <polyline points="15 3 21 3 21 9"></polyline>
-                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                  </svg>
-                </span>
-                <span class="standalone-btn-text">Open Standalone Page</span>
-                <span class="standalone-btn-badge">FULLSCREEN</span>
-              </a>
             </div>
 
             <div class="finale-content-center">
               <!-- 2. Main Header: Glowing, elegant script font "I Love You" -->
               <div class="finale-header-group">
-                <h1 class="finale-script-title" id="finaleMainTitle">I Love You</h1>
+                <h1 class="finale-script-title main-title" id="finaleMainTitle">I Love You</h1>
               </div>
 
               <!-- 3. Central Animation: 3D-Style Heart & Glowing Platform / Portal Effect -->
-              <div class="finale-3d-heart-container" id="finale3DHeartContainer">
-                <!-- Glowing platform / portal effect below the heart casting upward blue light -->
-                <div class="finale-portal-platform" aria-hidden="true">
-                  <div class="finale-portal-upward-light"></div>
-                  <div class="finale-portal-ring-outer"></div>
-                  <div class="finale-portal-ring-middle"></div>
-                  <div class="finale-portal-core-glow"></div>
+              <div class="center-stage" id="finale3DHeartContainer" aria-label="Animated 3D Glowing Particle Heart">
+                <!-- Subtle interaction indicator -->
+                <div class="interaction-hint">
+                  <span>✦</span>
+                  <span>Drag to rotate 3D heart</span>
                 </div>
 
-                <canvas id="finaleCanvas" class="finale-3d-canvas" aria-label="Interactive 3D Glowing Particle Heart"></canvas>
+                <!-- HTML5 Canvas rendering glowing blue 3D particle heart -->
+                <canvas id="heartCanvas"></canvas>
 
-                <!-- Subtle touch/drag interaction hint badge -->
-                <div class="finale-interactive-hint" id="finaleInteractiveHint">
-                  <span class="hint-icon">✦</span>
-                  <span class="hint-text">Drag to rotate 3D heart</span>
-                  <span class="hint-icon">✦</span>
+                <!-- Glowing platform / portal effect below the heart casting upward blue light -->
+                <div class="portal-platform-stage" aria-hidden="true">
+                  <div class="portal-upward-light"></div>
+                  <div class="portal-ring-outer"></div>
+                  <div class="portal-ring-middle"></div>
+                  <div class="portal-core-glow"></div>
                 </div>
               </div>
+
+              <!-- 4. GLOWING ENVELOPE (Sitting gracefully underneath the 3D heart animation) -->
+              <section class="envelope-hero-section" id="envelopeHeroSection" aria-label="Interactive Surprise Envelope">
+                <div class="envelope-wrapper" id="envelopeWrapper" role="button" tabindex="0" aria-label="Tap to open romantic letter">
+                  <!-- Ambient ethereal glow & sparkle particles -->
+                  <div class="envelope-ambient-glow" aria-hidden="true"></div>
+                  <div class="envelope-sparkles" aria-hidden="true">
+                    <span class="env-sparkle s1">✦</span>
+                    <span class="env-sparkle s2">✧</span>
+                    <span class="env-sparkle s3">✦</span>
+                    <span class="env-sparkle s4">✧</span>
+                  </div>
+
+                  <!-- 3D Physical Style Envelope -->
+                  <div class="envelope-card-3d" id="envelopeCard3D">
+                    <div class="env-back"></div>
+                    
+                    <div class="env-letter-preview" id="envLetterPreview">
+                      <div class="env-letter-mini-lines">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </div>
+                      <span class="env-mini-heart">❤️</span>
+                    </div>
+
+                    <div class="env-pocket"></div>
+
+                    <div class="env-flap" id="envFlap">
+                      <div class="env-wax-seal" id="envWaxSeal">
+                        <span class="wax-heart">❤️</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Instruction under envelope -->
+                  <div class="envelope-hint-row">
+                    <span class="env-hint-pulse"></span>
+                    <span class="env-hint-text" id="envHintText">Open this...</span>
+                  </div>
+                </div>
+              </section>
 
               <!-- Emotional Closing Passage (Positioned cleanly below the 3D heart) -->
               <div class="finale-quote-box">
@@ -360,15 +393,6 @@
                   <span class="replay-icon">↺</span>
                   <span class="replay-label" id="finaleReplayBtnText">REPLAY EXPERIENCE</span>
                 </button>
-              </div>
-
-              <!-- Dedicated Callout for Standalone Page -->
-              <div class="finale-standalone-action-wrap">
-                <a href="finale.html" target="_blank" rel="noopener noreferrer" class="finale-standalone-hero-btn" id="finaleStandaloneHeroBtn" title="Open Fullscreen 3D Scene in a Dedicated Window">
-                  <span class="hero-standalone-icon">✨</span>
-                  <span class="hero-standalone-label">Open Standalone 3D Finale Page</span>
-                  <span class="hero-standalone-arrow">↗</span>
-                </a>
               </div>
 
               <div class="finale-mini-options">
@@ -1585,6 +1609,148 @@
     </div>
   </div>
 
+  <!-- ===================================================================
+       LETTER MODAL (Slides up & unfolds when envelope opens in EXTRA)
+       =================================================================== -->
+  <div class="letter-modal-overlay" id="letterModalOverlay" style="display: none;" aria-hidden="true">
+    <div class="letter-modal-backdrop" id="letterBackdrop"></div>
+    
+    <div class="letter-unfold-container" id="letterContainer" role="dialog" aria-modal="true" aria-labelledby="letterHeading">
+      <button type="button" class="letter-close-btn" id="letterCloseBtn" aria-label="Close letter">&times;</button>
+      
+      <div class="letter-paper">
+        <div class="letter-stamp-seal">💌</div>
+        <h2 class="letter-heading" id="letterHeading">Before you go...</h2>
+        
+        <div class="letter-body-content">
+          <p id="letterMessageText">I left one more little thing for you.</p>
+          <p class="letter-sub-prompt" id="letterSubPrompt">Let's see what you remember.</p>
+        </div>
+
+        <div class="letter-action-row">
+          <button type="button" class="open-story-btn" id="openOurStoryBtn">
+            <span class="btn-sparkle">✨</span>
+            <span id="openStoryBtnText">OPEN OUR STORY</span>
+            <span class="btn-arrow">→</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       OUR STORY INTERACTIVE EXPERIENCE FULL-SCREEN OVERLAY (4 STAGES)
+       =================================================================== -->
+  <div class="our-story-overlay" id="ourStoryOverlay" style="display: none;" aria-hidden="true">
+    <div class="story-atmosphere-glow" aria-hidden="true"></div>
+
+    <!-- Top Story Navigation Bar -->
+    <div class="story-top-bar">
+      <button type="button" class="story-exit-btn" id="storyExitBtn" title="Close and return to EXTRA">
+        <span>✕ Close</span>
+      </button>
+      <div class="story-stage-indicator" id="storyStageIndicator">
+        <span class="stage-dot active" data-stage="1"></span>
+        <span class="stage-dot" data-stage="2"></span>
+        <span class="stage-dot" data-stage="3"></span>
+        <span class="stage-dot" data-stage="4"></span>
+      </div>
+    </div>
+
+    <!-- Stage Views Viewport -->
+    <div class="story-viewport" id="storyViewport">
+
+      <!-- STAGE 1: HOW WELL DO YOU REMEMBER US? -->
+      <section class="story-stage-pane" id="stage1Pane">
+        <div class="stage-header">
+          <span class="stage-badge">STAGE 01</span>
+          <h2 class="stage-title" id="stage1Title">HOW WELL DO YOU REMEMBER US?</h2>
+          <p class="stage-subtitle" id="stage1Subtitle">Let's see what survived in that memory of yours 👀</p>
+          
+          <div class="quiz-progress-bar-wrap">
+            <div class="quiz-progress-bar" id="quizProgressBar" style="width: 10%;"></div>
+          </div>
+          <div class="quiz-progress-label" id="quizProgressLabel">QUESTION 1 / 10</div>
+        </div>
+
+        <div class="quiz-card-container" id="quizCardContainer"></div>
+
+        <div class="quiz-reaction-toast" id="quizReactionToast" style="display: none;">
+          <span class="toast-emoji" id="quizReactionEmoji">✨</span>
+          <span class="toast-msg" id="quizReactionMsg"></span>
+        </div>
+      </section>
+
+      <!-- STAGE 2: CHOOSE YOUR MEMORY -->
+      <section class="story-stage-pane" id="stage2Pane" style="display: none;">
+        <div class="stage-header">
+          <span class="stage-badge">STAGE 02</span>
+          <h2 class="stage-title">CHOOSE YOUR MEMORY</h2>
+          <p class="stage-subtitle">Which one would you choose to relive?</p>
+          <div class="memory-round-pill" id="memoryRoundPill">ROUND 1 / 5</div>
+        </div>
+
+        <div class="memory-choices-grid" id="memoryChoicesGrid"></div>
+      </section>
+
+      <!-- STAGE 3: THE FINAL QUESTION -->
+      <section class="story-stage-pane" id="stage3Pane" style="display: none;">
+        <div class="final-question-card">
+          <span class="final-slow-badge">A MOMENT OF PAUSE</span>
+          <h2 class="final-question-heading">OKAY...<br><span>ONE LAST QUESTION.</span></h2>
+          <p class="final-question-prompt" id="finalQuestionPromptText">If you could relive one moment from our story, which one would it be?</p>
+
+          <form id="finalQuestionForm" class="final-question-form">
+            <textarea id="finalQuestionInput" class="final-textarea" rows="4" placeholder="Type your answer here..." required maxlength="600"></textarea>
+            <div class="final-form-footer">
+              <span class="final-char-count"><span id="finalCharCount">0</span>/600</span>
+              <button type="submit" class="final-submit-btn" id="finalSubmitBtn">
+                <span>SUBMIT</span>
+                <span>✨</span>
+              </button>
+            </div>
+          </form>
+
+          <div id="finalSubmitStatus" class="final-submit-status" style="display: none;"></div>
+        </div>
+      </section>
+
+      <!-- STAGE 4: OUR STORY — WRAPPED & TIMELINE -->
+      <section class="story-stage-pane" id="stage4Pane" style="display: none;">
+        <div class="stage-header">
+          <span class="stage-badge">STAGE 04</span>
+          <h2 class="stage-title" id="wrappedTitle">OUR STORY</h2>
+          <p class="stage-subtitle" id="wrappedSubtitle">A little collection of everything we were.</p>
+        </div>
+
+        <div class="wrapped-stats-grid" id="wrappedStatsGrid"></div>
+
+        <div class="timeline-intro-box">
+          <h3 class="timeline-main-heading">THE TIMELINE</h3>
+          <p class="timeline-subheading">Tap on any chapter to open the memories inside.</p>
+        </div>
+
+        <div class="interactive-timeline-wrap" id="interactiveTimelineWrap"></div>
+
+        <div class="story-quiet-final-card">
+          <div class="final-stars-accent">✦ ✦ ✦</div>
+          <p class="story-quiet-quote" id="storyQuietQuoteText">
+            "Some chapters end.<br>That doesn't mean they weren't beautiful."
+          </p>
+          <div class="story-quiet-actions">
+            <button type="button" class="replay-story-btn" id="replayStoryBtn">
+              <span>↺ REPLAY OUR STORY</span>
+            </button>
+            <button type="button" class="close-story-btn" id="closeStoryFinalBtn">
+              <span>CLOSE</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
   <!-- Supabase JS Client for GitHub Pages persistent online storage -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -1593,5 +1759,9 @@
 
   <!-- Core Script -->
   <script type="module" src="script.js"></script>
+  <!-- 3D Heart Simulation Engine for EXTRA Section -->
+  <script src="extra-heart.js"></script>
+  <!-- Our Story Interactive Engine -->
+  <script src="our-story.js"></script>
 </body>
 </html>
