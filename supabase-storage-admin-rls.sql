@@ -40,7 +40,7 @@ FOR SELECT
 TO public
 USING (bucket_id = 'Birthday-assets');
 
--- POLICY 2: ONLY AUTHENTICATED ADMIN USERS CAN INSERT (UPLOAD)
+-- POLICY 2: ONLY AUTHENTICATED ADMIN USERS CAN INSERT (UPLOAD) ADMIN ASSETS
 -- Protects photos/, backgrounds/, and music/ folders against unauthorized uploads.
 CREATE POLICY "Allow authenticated admin upload to Birthday-assets"
 ON storage.objects
@@ -48,8 +48,21 @@ FOR INSERT
 TO authenticated
 WITH CHECK (
   bucket_id = 'Birthday-assets'
-  -- Optional stricter restriction: uncomment the line below to restrict to your specific admin email:
-  -- AND (auth.jwt() ->> 'email') = 'matimbangobeni78@gmail.com'
+);
+
+-- POLICY 2B: PUBLIC VISITORS CAN UPLOAD LOVE NOTES ATTACHMENTS (love-notes/ folder)
+-- Allows anyone (visitors leaving wishes) to upload photos, voice recordings, or videos with their love note.
+DROP POLICY IF EXISTS "Allow public upload to love-notes" ON storage.objects;
+CREATE POLICY "Allow public upload to love-notes"
+ON storage.objects
+FOR INSERT
+TO public
+WITH CHECK (
+  bucket_id = 'Birthday-assets'
+  AND (
+    name LIKE 'love-notes/%'
+    OR (storage.foldername(name))[1] = 'love-notes'
+  )
 );
 
 -- POLICY 3: ONLY AUTHENTICATED ADMIN USERS CAN UPDATE (REPLACE)
@@ -109,3 +122,61 @@ ON public.birthday_content
 FOR INSERT
 TO authenticated
 WITH CHECK (true);
+
+-- ==============================================================================
+-- DATABASE POLICIES: love_notes table (Public Submission & Realtime Sync)
+-- ==============================================================================
+-- Allows ANY user/visitor (not just admin) to post love notes, like notes, and read notes.
+
+CREATE TABLE IF NOT EXISTS public.love_notes (
+  id TEXT PRIMARY KEY,
+  author TEXT NOT NULL,
+  role TEXT DEFAULT 'Loved One 💕',
+  avatar TEXT DEFAULT '💌',
+  message TEXT NOT NULL,
+  sticker TEXT DEFAULT '💖',
+  photos JSONB DEFAULT '[]'::jsonb,
+  video_url TEXT,
+  audio_url TEXT,
+  likes INT DEFAULT 1,
+  liked_by_user BOOLEAN DEFAULT true,
+  note_type TEXT DEFAULT 'text',
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE public.love_notes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public select love_notes" ON public.love_notes;
+DROP POLICY IF EXISTS "Public insert love_notes" ON public.love_notes;
+DROP POLICY IF EXISTS "Public update love_notes" ON public.love_notes;
+DROP POLICY IF EXISTS "Admin delete love_notes" ON public.love_notes;
+
+-- Public can SELECT all love notes
+CREATE POLICY "Public select love_notes"
+ON public.love_notes
+FOR SELECT
+TO public
+USING (true);
+
+-- Anyone (public visitors + admin) can post new love notes
+CREATE POLICY "Public insert love_notes"
+ON public.love_notes
+FOR INSERT
+TO public
+WITH CHECK (true);
+
+-- Anyone can like love notes (increment likes)
+CREATE POLICY "Public update love_notes"
+ON public.love_notes
+FOR UPDATE
+TO public
+USING (true)
+WITH CHECK (true);
+
+-- Admin can delete love notes
+CREATE POLICY "Admin delete love_notes"
+ON public.love_notes
+FOR DELETE
+TO authenticated
+USING (true);
+

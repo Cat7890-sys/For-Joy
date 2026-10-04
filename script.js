@@ -1474,7 +1474,7 @@ async function loadBirthdayContentFromSupabase() {
         initHighlightedMemoriesObserver();
       }
 
-      // Love Notes / Guestbook (JSONB array)
+      // Love Notes / Guestbook (JSONB array & public.love_notes table)
       if (Array.isArray(row.love_notes) && row.love_notes.length > 0) {
         guestbookMessages = row.love_notes;
         try {
@@ -1484,6 +1484,7 @@ async function loadBirthdayContentFromSupabase() {
         renderGuestbookGallery(currentGuestbookFilter);
         renderAdminLoveNotesList();
       }
+      fetchLoveNotesFromSupabase();
 
       // Finale configuration
       if (row.finale_title && typeof row.finale_title === "string" && row.finale_title.trim() !== "") {
@@ -3071,6 +3072,7 @@ function initGuestbook() {
   loadGuestbookMessages();
   renderGuestbookGallery();
   setupGuestbookModal();
+  fetchLoveNotesFromSupabase();
 }
 
 function loadGuestbookMessages() {
@@ -3087,6 +3089,55 @@ function loadGuestbookMessages() {
   }
 }
 
+async function fetchLoveNotesFromSupabase() {
+  const client = getSupabaseClient();
+  if (!client) return;
+  try {
+    const { data, error } = await client
+      .from("love_notes")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (!error && Array.isArray(data) && data.length > 0) {
+      const remoteNotes = data.map(n => ({
+        id: n.id,
+        author: n.author,
+        role: n.role || "Loved One 💕",
+        avatar: n.avatar || "💌",
+        message: n.message,
+        sticker: n.sticker || "💖",
+        photos: n.photos || [],
+        videoUrl: n.video_url,
+        audioUrl: n.audio_url,
+        date: n.created_at ? new Date(n.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : "Recently",
+        likes: n.likes || 1,
+        likedByUser: false,
+        type: n.note_type || "text"
+      }));
+
+      // Merge remote notes with local notes (deduplicating by ID)
+      const mergedMap = new Map();
+      remoteNotes.forEach(n => mergedMap.set(n.id, n));
+      (guestbookMessages || []).forEach(n => {
+        if (!mergedMap.has(n.id)) {
+          mergedMap.set(n.id, n);
+        }
+      });
+      guestbookMessages = Array.from(mergedMap.values());
+
+      try {
+        localStorage.setItem(GUESTBOOK_STORAGE_KEY, JSON.stringify(guestbookMessages));
+      } catch (_) {}
+
+      renderLoveNotes();
+      renderGuestbookGallery(currentGuestbookFilter);
+      renderAdminLoveNotesList();
+    }
+  } catch (e) {
+    console.warn("[Supabase Love Notes fetch]:", e);
+  }
+}
+
 function saveGuestbookMessages() {
   try {
     localStorage.setItem(GUESTBOOK_STORAGE_KEY, JSON.stringify(guestbookMessages));
@@ -3094,13 +3145,32 @@ function saveGuestbookMessages() {
     console.warn("Could not persist guestbook to localStorage:", err);
   }
 
-  // Persist to Supabase birthday_content.love_notes
+  // Persist to Supabase public.love_notes and birthday_content
   if (!isInitialSupabaseLoading) {
+    const client = getSupabaseClient();
+    if (client && guestbookMessages.length > 0) {
+      const topNote = guestbookMessages[0];
+      client.from("love_notes").upsert({
+        id: topNote.id,
+        author: topNote.author,
+        role: topNote.role || "Loved One 💕",
+        avatar: topNote.avatar || "💌",
+        message: topNote.message,
+        sticker: topNote.sticker || "💖",
+        photos: topNote.photos || [],
+        video_url: topNote.videoUrl,
+        audio_url: topNote.audioUrl,
+        likes: topNote.likes || 1,
+        liked_by_user: topNote.likedByUser,
+        note_type: topNote.type || "text",
+        created_at: new Date().toISOString()
+      }).then(({ error }) => {
+        if (error) console.warn("[Supabase love_notes upsert warning]:", error.message);
+      }).catch(() => {});
+    }
+
     if (isCurrentUserAdmin()) {
       saveAllBirthdayContentToSupabase({ love_notes: guestbookMessages });
-    } else {
-      // Attempt visitor update with anon key (falls back cleanly to localStorage if unauthorized)
-      saveAllBirthdayContentToSupabase({ love_notes: guestbookMessages }, false);
     }
   }
 }
@@ -3209,6 +3279,13 @@ function handleLikeWish(id) {
   saveGuestbookMessages();
   renderLoveNotes();
   renderGuestbookGallery(currentGuestbookFilter);
+
+  const client = getSupabaseClient();
+  if (client) {
+    try {
+      client.from("love_notes").update({ likes: item.likes }).eq("id", id).then(() => {}).catch(() => {});
+    } catch (_) {}
+  }
 }
 
 function openSignGuestbook() {
@@ -3234,12 +3311,15 @@ function stopModalCamera() {
 }
 
 // ============================================================================
-// CHAPTER 3 — BIRTHDAY LOVE NOTES & WISHES ENGINE
+// CHAPTER 3 — BIRTHDAY LOVE NOTES & WISHES ENGINE (Supabase Synced for Everyone)
 // ============================================================================
 
 let noteModalPhotos = []; // array of data URLs or URLs
+let noteModalPhotoFiles = []; // raw File objects for Supabase Storage upload
 let noteModalVideo = null; // video data URL or blob URL
+let noteModalVideoBlob = null; // raw video Blob or File
 let noteModalVoice = null; // audio data URL or blob URL
+let noteModalVoiceBlob = null; // raw voice Blob or File
 let noteModalSticker = "💖";
 let noteModalVideoRecorder = null;
 let noteModalVoiceRecorder = null;
@@ -3248,10 +3328,64 @@ let noteModalVoiceStream = null;
 let noteModalVideoChunks = [];
 let noteModalVoiceChunks = [];
 
+async function uploadLoveNoteMedia(blobOrFile, folder = "love-notes", defaultExt = "jpg") {
+  if (!blobOrFile) return null;
+  if (typeof blobOrFile === "string" && (blobOrFile.startsWith("http://") || blobOrFile.startsWith("https://"))) {
+    return blobOrFile;
+  }
+  try {
+    const isFile = blobOrFile instanceof File;
+    const isBlob = blobOrFile instanceof Blob;
+    if (!isFile && !isBlob) return null;
+
+    let filename = isFile ? blobOrFile.name : `note_media_${Date.now()}.${defaultExt}`;
+    const cleanExt = (filename.split('.').pop() || defaultExt).toLowerCase();
+    const cleanBase = filename.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_");
+    const filePath = `${folder}/${Date.now()}_${cleanBase}.${cleanExt}`;
+
+    const client = getSupabaseClient();
+    if (client && client.storage) {
+      const { data, error } = await client.storage
+        .from("Birthday-assets")
+        .upload(filePath, blobOrFile, { cacheControl: "3600", upsert: true });
+
+      if (!error && data) {
+        const { data: urlData } = client.storage
+          .from("Birthday-assets")
+          .getPublicUrl(filePath);
+        if (urlData && urlData.publicUrl) {
+          return urlData.publicUrl;
+        }
+      }
+    }
+
+    // Direct REST upload fallback with publishable anon key
+    const uploadUrl = `${SUPABASE_URL}/storage/v1/object/Birthday-assets/${filePath}`;
+    const authToken = currentAdminSession?.access_token || SUPABASE_PUBLISHABLE_KEY;
+    const res = await fetch(uploadUrl, {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_PUBLISHABLE_KEY,
+        "Authorization": `Bearer ${authToken}`,
+        "x-upsert": "true"
+      },
+      body: blobOrFile
+    });
+    if (res.ok) {
+      return `${SUPABASE_URL}/storage/v1/object/public/Birthday-assets/${filePath}`;
+    }
+  } catch (err) {
+    console.warn("[Love Notes Storage Upload]:", err);
+  }
+  return null;
+}
+
 function initLoveNotesSystem() {
+  loadGuestbookMessages();
   renderLoveNotes();
   setupLoveNotesModal();
   setupAdminLoveNotes();
+  fetchLoveNotesFromSupabase();
 }
 
 function renderLoveNotes() {
@@ -3412,6 +3546,7 @@ function setupLoveNotesModal() {
       let readCount = 0;
 
       filesToRead.forEach(file => {
+        noteModalPhotoFiles.push(file);
         const reader = new FileReader();
         reader.onload = (loadEvent) => {
           noteModalPhotos.push(loadEvent.target.result);
@@ -3439,9 +3574,10 @@ function setupLoveNotesModal() {
 
   if (openVideoRecorderBtn) {
     openVideoRecorderBtn.addEventListener("click", () => {
-      if (noteModalVoice) {
+      if (noteModalVoice || noteModalVoiceBlob) {
         if (!confirm("You already have a voice note attached. Attaching a video will replace your voice note. Proceed?")) return;
         noteModalVoice = null;
+        noteModalVoiceBlob = null;
       }
       if (noteVideoPanel) noteVideoPanel.style.display = "block";
       updateNoteAttachmentStatus();
@@ -3476,8 +3612,10 @@ function setupLoveNotesModal() {
         };
         noteModalVideoRecorder.onstop = () => {
           const blob = new Blob(noteModalVideoChunks, { type: "video/webm" });
+          noteModalVideoBlob = blob;
           noteModalVideo = URL.createObjectURL(blob);
           noteModalVoice = null; // Video and voice are mutually exclusive
+          noteModalVoiceBlob = null;
           if (noteVideoPreview) {
             noteVideoPreview.srcObject = null;
             noteVideoPreview.src = noteModalVideo;
@@ -3513,8 +3651,10 @@ function setupLoveNotesModal() {
     noteVideoFileInput.addEventListener("change", (e) => {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
+      noteModalVideoBlob = file;
       noteModalVideo = URL.createObjectURL(file);
       noteModalVoice = null;
+      noteModalVoiceBlob = null;
       if (noteVideoPreview) {
         noteVideoPreview.srcObject = null;
         noteVideoPreview.src = noteModalVideo;
@@ -3538,9 +3678,10 @@ function setupLoveNotesModal() {
 
   if (openVoiceRecorderBtn) {
     openVoiceRecorderBtn.addEventListener("click", () => {
-      if (noteModalVideo) {
+      if (noteModalVideo || noteModalVideoBlob) {
         if (!confirm("You already have a video attached. Attaching a voice note will replace your video. Proceed?")) return;
         noteModalVideo = null;
+        noteModalVideoBlob = null;
       }
       if (noteVoicePanel) noteVoicePanel.style.display = "block";
       updateNoteAttachmentStatus();
@@ -3565,8 +3706,10 @@ function setupLoveNotesModal() {
         };
         noteModalVoiceRecorder.onstop = () => {
           const blob = new Blob(noteModalVoiceChunks, { type: "audio/webm" });
+          noteModalVoiceBlob = blob;
           noteModalVoice = URL.createObjectURL(blob);
           noteModalVideo = null; // Mutually exclusive
+          noteModalVideoBlob = null;
           if (noteVoicePreview) {
             noteVoicePreview.src = noteModalVoice;
             noteVoicePreview.style.display = "block";
@@ -3600,8 +3743,10 @@ function setupLoveNotesModal() {
     noteVoiceFileInput.addEventListener("change", (e) => {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
+      noteModalVoiceBlob = file;
       noteModalVoice = URL.createObjectURL(file);
       noteModalVideo = null;
+      noteModalVideoBlob = null;
       if (noteVoicePreview) {
         noteVoicePreview.src = noteModalVoice;
         noteVoicePreview.style.display = "block";
@@ -3611,14 +3756,15 @@ function setupLoveNotesModal() {
     });
   }
 
-  // Unified Form Submit (Enforces: author, message, combinations)
+  // Unified Form Submit (Enforces: author, message, combinations & syncs to Supabase)
   const loveNoteSubmissionForm = document.getElementById("loveNoteSubmissionForm");
   if (loveNoteSubmissionForm) {
-    loveNoteSubmissionForm.addEventListener("submit", (e) => {
+    loveNoteSubmissionForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const authorInput = document.getElementById("wishAuthorName");
       const roleInput = document.getElementById("wishAuthorRole");
       const messageInput = document.getElementById("wishMessageText");
+      const submitBtn = document.getElementById("submitLoveNoteBtn") || loveNoteSubmissionForm.querySelector("button[type='submit']");
 
       const author = authorInput ? authorInput.value.trim() : "A Loving Friend";
       const role = (roleInput && roleInput.value.trim()) || "Loved One 💕";
@@ -3629,43 +3775,110 @@ function setupLoveNotesModal() {
         return;
       }
 
-      const initials = author.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) || "💌";
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.dataset.origText = submitBtn.innerHTML;
+        submitBtn.innerHTML = "<span>Uploading & Posting Love Note... ✨</span>";
+      }
 
-      let noteType = "text";
-      if (noteModalVideo) noteType = "video";
-      else if (noteModalVoice) noteType = "audio";
-      else if (noteModalPhotos.length > 0) noteType = "photos";
+      try {
+        const initials = author.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) || "💌";
 
-      const newNote = {
-        id: "wish-" + Date.now(),
-        author: author,
-        role: role,
-        avatar: initials,
-        message: message,
-        sticker: noteModalSticker,
-        photos: [...noteModalPhotos],
-        videoUrl: noteModalVideo,
-        audioUrl: noteModalVoice,
-        date: "Just now",
-        likes: 1,
-        likedByUser: true,
-        type: noteType
-      };
+        let noteType = "text";
+        if (noteModalVideo || noteModalVideoBlob) noteType = "video";
+        else if (noteModalVoice || noteModalVoiceBlob) noteType = "audio";
+        else if (noteModalPhotos.length > 0) noteType = "photos";
 
-      guestbookMessages.unshift(newNote);
-      saveGuestbookMessages();
+        // 1. Upload photos to Supabase Storage if files exist
+        let finalPhotos = [];
+        if (noteModalPhotoFiles && noteModalPhotoFiles.length > 0) {
+          for (let i = 0; i < noteModalPhotoFiles.length; i++) {
+            const file = noteModalPhotoFiles[i];
+            const uploadedUrl = await uploadLoveNoteMedia(file, "love-notes", "jpg");
+            finalPhotos.push(uploadedUrl || noteModalPhotos[i] || "");
+          }
+        } else {
+          finalPhotos = [...noteModalPhotos];
+        }
 
-      // Reset form and attachments
-      loveNoteSubmissionForm.reset();
-      resetNoteModalAttachments();
-      closeSignGuestbook();
+        // 2. Upload video if blob/file exists
+        let finalVideoUrl = noteModalVideo;
+        if (noteModalVideoBlob) {
+          const uploadedVid = await uploadLoveNoteMedia(noteModalVideoBlob, "love-notes", "webm");
+          if (uploadedVid) finalVideoUrl = uploadedVid;
+        }
 
-      // Re-render both views
-      renderLoveNotes();
-      renderGuestbookGallery(currentGuestbookFilter);
+        // 3. Upload voice audio if blob/file exists
+        let finalAudioUrl = noteModalVoice;
+        if (noteModalVoiceBlob) {
+          const uploadedAudio = await uploadLoveNoteMedia(noteModalVoiceBlob, "love-notes", "webm");
+          if (uploadedAudio) finalAudioUrl = uploadedAudio;
+        }
 
-      // Celebration burst
-      startConfettiAnimation();
+        const newNote = {
+          id: "wish-" + Date.now(),
+          author: author,
+          role: role,
+          avatar: initials,
+          message: message,
+          sticker: noteModalSticker,
+          photos: finalPhotos.filter(Boolean),
+          videoUrl: finalVideoUrl,
+          audioUrl: finalAudioUrl,
+          date: "Just now",
+          likes: 1,
+          likedByUser: true,
+          type: noteType
+        };
+
+        guestbookMessages.unshift(newNote);
+        saveGuestbookMessages();
+
+        // 4. Insert into Supabase public.love_notes table (persists permanently for all visitors)
+        const client = getSupabaseClient();
+        if (client) {
+          try {
+            await client.from("love_notes").upsert({
+              id: newNote.id,
+              author: newNote.author,
+              role: newNote.role,
+              avatar: newNote.avatar,
+              message: newNote.message,
+              sticker: newNote.sticker,
+              photos: newNote.photos,
+              video_url: newNote.videoUrl,
+              audio_url: newNote.audioUrl,
+              likes: newNote.likes,
+              liked_by_user: newNote.likedByUser,
+              note_type: newNote.type,
+              created_at: new Date().toISOString()
+            });
+            console.log("[Love Notes] Note saved to Supabase love_notes successfully! ❤️");
+          } catch (insertErr) {
+            console.warn("[Love Notes] Supabase insert note:", insertErr);
+          }
+        }
+
+        // Reset form and attachments
+        loveNoteSubmissionForm.reset();
+        resetNoteModalAttachments();
+        closeSignGuestbook();
+
+        // Re-render both views
+        renderLoveNotes();
+        renderGuestbookGallery(currentGuestbookFilter);
+        renderAdminLoveNotesList();
+
+        // Celebration burst
+        startConfettiAnimation();
+      } catch (err) {
+        console.error("Error submitting love note:", err);
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = submitBtn.dataset.origText || "<span>Post Birthday Love Note ✨</span>";
+        }
+      }
     });
   }
 
@@ -3689,8 +3902,11 @@ function stopNoteVoiceCapture() {
 
 function resetNoteModalAttachments() {
   noteModalPhotos = [];
+  noteModalPhotoFiles = [];
   noteModalVideo = null;
+  noteModalVideoBlob = null;
   noteModalVoice = null;
+  noteModalVoiceBlob = null;
   stopNoteVideoCapture();
   stopNoteVoiceCapture();
 
@@ -3773,6 +3989,9 @@ function updateNoteAttachmentStatus() {
       `;
       chip.querySelector(".remove-chip-btn").addEventListener("click", () => {
         noteModalPhotos.splice(idx, 1);
+        if (noteModalPhotoFiles && noteModalPhotoFiles[idx]) {
+          noteModalPhotoFiles.splice(idx, 1);
+        }
         updateNoteAttachmentStatus();
       });
       previewsContainer.appendChild(chip);
@@ -3788,6 +4007,7 @@ function updateNoteAttachmentStatus() {
       `;
       chip.querySelector("#removeVideoChipBtn").addEventListener("click", () => {
         noteModalVideo = null;
+        noteModalVideoBlob = null;
         const noteVideoPreview = document.getElementById("noteVideoPreview");
         if (noteVideoPreview) noteVideoPreview.src = "";
         updateNoteAttachmentStatus();
@@ -3805,6 +4025,7 @@ function updateNoteAttachmentStatus() {
       `;
       chip.querySelector("#removeVoiceChipBtn").addEventListener("click", () => {
         noteModalVoice = null;
+        noteModalVoiceBlob = null;
         const noteVoicePreview = document.getElementById("noteVoicePreview");
         if (noteVoicePreview) noteVoicePreview.src = "";
         updateNoteAttachmentStatus();
@@ -3832,6 +4053,7 @@ function setupAdminLoveNotes() {
   const refreshBtn = document.getElementById("adminRefreshNotesBtn");
   if (refreshBtn) {
     refreshBtn.addEventListener("click", () => {
+      fetchLoveNotesFromSupabase();
       renderLoveNotes();
       renderGuestbookGallery(currentGuestbookFilter);
       renderAdminLoveNotesList();
@@ -3874,13 +4096,21 @@ function renderAdminLoveNotesList() {
       </div>
     `;
 
-    row.querySelector(".delete-note-btn").addEventListener("click", () => {
+    row.querySelector(".delete-note-btn").addEventListener("click", async () => {
       if (confirm(`Delete love note from ${item.author}?`)) {
+        const deletedId = item.id;
         guestbookMessages.splice(index, 1);
         saveGuestbookMessages();
         renderLoveNotes();
         renderGuestbookGallery(currentGuestbookFilter);
         renderAdminLoveNotesList();
+
+        const client = getSupabaseClient();
+        if (client) {
+          try {
+            await client.from("love_notes").delete().eq("id", deletedId);
+          } catch (_) {}
+        }
       }
     });
 
