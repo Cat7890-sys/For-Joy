@@ -523,6 +523,7 @@
         <button type="button" class="customize-tab-btn" data-tab="tabPhotos">📸 Burst Photos (<span id="panelPhotoCount">0</span>)</button>
         <button type="button" class="customize-tab-btn" data-tab="tabMemoriesAdmin">🎞️ Memories (<span id="panelMemoriesCount">0</span>)</button>
         <button type="button" class="customize-tab-btn" data-tab="tabLoveNotesAdmin">💌 Love Notes (<span id="panelLoveNotesCount">0</span>)</button>
+        <button type="button" class="customize-tab-btn" data-tab="tabOurStoryAdmin">📖 Our Story</button>
         <button type="button" class="customize-tab-btn" data-tab="tabBackground">🖼️ Background</button>
         <button type="button" class="customize-tab-btn" data-tab="tabMusic">🎵 Music</button>
         <button type="button" class="customize-tab-btn" data-tab="tabBurst">💥 Burst & FX</button>
@@ -1327,6 +1328,103 @@
 
           <div id="adminLoveNotesList" class="admin-love-notes-list">
             <!-- Populated dynamically with approve/hide and delete buttons -->
+          </div>
+        </div>
+
+        <!-- ================= TAB: OUR STORY ADMIN ================= -->
+        <div id="tabOurStoryAdmin" class="customize-pane">
+          <div class="pane-header-row">
+            <div>
+              <h3 class="pane-heading">📖 Our Story Experience Management</h3>
+              <p class="pane-subheading">Customize the interactive envelope letter, quiz questions, 5 memory comparison rounds, view submitted responses, and edit timeline memories.</p>
+            </div>
+            <div class="pane-actions-row">
+              <button type="button" id="adminSaveOurStoryBtn" class="primary-btn">
+                <span>💾 Save Our Story to Supabase</span>
+              </button>
+              <button type="button" id="adminRefreshOurStoryBtn" class="secondary-btn">
+                <span>🔄 Refresh Data</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Status Indicator -->
+          <div id="adminOurStoryStatus" class="storage-upload-status" style="display: none; margin-bottom: 1rem;"></div>
+
+          <!-- Sub-Section 1: Envelope & Letter Settings -->
+          <div class="admin-content-section">
+            <h4 class="admin-section-title">1. Envelope & Letter Invitation Copy</h4>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label for="storyLetterHeadingInput">Letter Heading</label>
+                <input type="text" id="storyLetterHeadingInput" class="form-input" value="Before you go..." />
+              </div>
+              <div class="form-group">
+                <label for="storyLetterButtonTextInput">Button Text</label>
+                <input type="text" id="storyLetterButtonTextInput" class="form-input" value="OPEN OUR STORY" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="storyLetterMessageInput">Letter Main Message</label>
+              <input type="text" id="storyLetterMessageInput" class="form-input" value="I left one more little thing for you." />
+            </div>
+            <div class="form-group">
+              <label for="storyLetterSubPromptInput">Letter Sub-Prompt</label>
+              <input type="text" id="storyLetterSubPromptInput" class="form-input" value="Let's see what you remember." />
+            </div>
+          </div>
+
+          <!-- Sub-Section 2: Stage 1 Quiz Questions (8-10 items) -->
+          <div class="admin-content-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <h4 class="admin-section-title" style="margin-bottom: 0;">2. Stage 1: Quiz Questions (<span id="adminQuizCount">10</span>)</h4>
+              <button type="button" id="adminAddQuizQuestionBtn" class="secondary-btn" style="padding: 0.35rem 0.8rem; font-size: 0.8rem;">+ Add Question</button>
+            </div>
+            <div id="adminQuizQuestionsList" style="display: flex; flex-direction: column; gap: 0.85rem;">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Sub-Section 3: Stage 2 Memory Rounds (5 rounds) -->
+          <div class="admin-content-section">
+            <h4 class="admin-section-title">3. Stage 2: Memory Choice Rounds (5 Rounds)</h4>
+            <div id="adminMemoryRoundsList" style="display: flex; flex-direction: column; gap: 1rem;">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Sub-Section 4: Stage 3 Final Question & Submitted Answers -->
+          <div class="admin-content-section">
+            <h4 class="admin-section-title">4. Stage 3: Final Question & Visitor Submissions</h4>
+            <div class="form-group">
+              <label for="storyFinalQuestionPromptInput">Final Question Prompt</label>
+              <input type="text" id="storyFinalQuestionPromptInput" class="form-input" value="If you could relive one moment from our story, which one would it be?" />
+            </div>
+            <div style="margin-top: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <label style="font-weight: 600; color: #fff; font-size: 0.88rem;">Submitted Responses From Visitor (Private)</label>
+                <button type="button" id="adminRefreshSubmissionsBtn" class="secondary-btn" style="padding: 0.3rem 0.75rem; font-size: 0.78rem;">🔄 Check Submissions</button>
+              </div>
+              <div id="adminSubmissionsList" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 0.85rem; max-height: 200px; overflow-y: auto;">
+                <p style="color: #94a3b8; font-size: 0.82rem; margin: 0;">No responses submitted yet.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-Section 5: Stage 4 Wrapped Stats -->
+          <div class="admin-content-section">
+            <h4 class="admin-section-title">5. Stage 4: Wrapped Statistics Cards</h4>
+            <div id="adminWrappedStatsList" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Sub-Section 6: Interactive Timeline -->
+          <div class="admin-content-section">
+            <h4 class="admin-section-title">6. Interactive Timeline Chapters</h4>
+            <div id="adminTimelineList" style="display: flex; flex-direction: column; gap: 0.85rem;">
+              <!-- Rendered dynamically -->
+            </div>
           </div>
         </div>
 

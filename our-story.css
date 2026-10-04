@@ -1,0 +1,1282 @@
+/* ==========================================================================
+   OUR STORY INTERACTIVE EXPERIENCE & ENVELOPE STYLES
+   ========================================================================== */
+
+/* 1. GLOWING ENVELOPE (Placed below the 3D heart) */
+.envelope-hero-section {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0.85rem auto 1.25rem;
+  padding: 0 1rem;
+}
+
+.envelope-wrapper {
+  position: relative;
+  width: clamp(210px, 55vw, 290px);
+  height: clamp(140px, 36vw, 185px);
+  cursor: pointer;
+  perspective: 1200px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  animation: envelopeFloat 4.2s ease-in-out infinite alternate;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease;
+}
+
+.envelope-wrapper:hover {
+  transform: translateY(-8px) scale(1.04);
+}
+
+.envelope-wrapper:active {
+  transform: scale(0.98);
+}
+
+@keyframes envelopeFloat {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-7px) rotate(0.8deg); }
+  100% { transform: translateY(2px) rotate(-0.5deg); }
+}
+
+/* Ambient Radial Glow */
+.envelope-ambient-glow {
+  position: absolute;
+  inset: -25px -35px;
+  background: radial-gradient(ellipse at center, rgba(255, 42, 122, 0.35) 0%, rgba(0, 217, 255, 0.22) 50%, transparent 75%);
+  filter: blur(28px);
+  pointer-events: none;
+  z-index: 0;
+  animation: envGlowBreathe 3.5s ease-in-out infinite alternate;
+}
+
+@keyframes envGlowBreathe {
+  0% { opacity: 0.6; transform: scale(0.94); }
+  100% { opacity: 1; transform: scale(1.08); }
+}
+
+/* Sparkles around envelope */
+.envelope-sparkles {
+  position: absolute;
+  inset: -15px;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.env-sparkle {
+  position: absolute;
+  color: #5ef3ff;
+  font-size: 0.85rem;
+  animation: envSparkleDrift 3s ease-in-out infinite alternate;
+  text-shadow: 0 0 8px #5ef3ff, 0 0 16px #ff2a7a;
+}
+.env-sparkle.s1 { top: 5%; left: -8%; animation-delay: 0s; }
+.env-sparkle.s2 { top: -12%; right: 12%; font-size: 0.75rem; color: #ff7aa2; animation-delay: 0.8s; }
+.env-sparkle.s3 { bottom: 10%; right: -6%; animation-delay: 1.5s; }
+.env-sparkle.s4 { bottom: -8%; left: 20%; font-size: 0.7rem; animation-delay: 2.2s; }
+
+@keyframes envSparkleDrift {
+  0% { opacity: 0.3; transform: scale(0.7) translateY(0); }
+  100% { opacity: 1; transform: scale(1.2) translateY(-6px); }
+}
+
+/* 3D Physical Style Envelope Structure */
+.envelope-card-3d {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(145deg, rgba(14, 25, 55, 0.95), rgba(8, 14, 32, 0.96));
+  border: 1.5px solid rgba(0, 217, 255, 0.4);
+  border-radius: 16px;
+  box-shadow: 
+    0 16px 45px rgba(0, 0, 0, 0.85),
+    0 0 30px rgba(0, 217, 255, 0.25),
+    0 0 45px rgba(255, 42, 122, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  z-index: 1;
+}
+
+.env-back {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(20, 32, 68, 0.8) 0%, rgba(10, 16, 38, 0.95) 100%);
+  border-radius: 16px;
+}
+
+/* Letter inside the envelope */
+.env-letter-preview {
+  position: absolute;
+  top: 15%;
+  left: 8%;
+  width: 84%;
+  height: 70%;
+  background: linear-gradient(135deg, #ffffff 0%, #fce7f3 40%, #e0f2fe 100%);
+  border-radius: 10px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  padding: 10px;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.env-letter-mini-lines {
+  width: 70%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.env-letter-mini-lines span {
+  height: 2.5px;
+  background: rgba(14, 25, 55, 0.3);
+  border-radius: 2px;
+}
+.env-letter-mini-lines span:nth-child(1) { width: 90%; }
+.env-letter-mini-lines span:nth-child(2) { width: 75%; }
+.env-letter-mini-lines span:nth-child(3) { width: 50%; }
+
+.env-mini-heart {
+  font-size: 0.95rem;
+  filter: drop-shadow(0 0 6px #ff2a7a);
+}
+
+/* Pocket folding overlay */
+.env-pocket {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 70%;
+  background: linear-gradient(160deg, rgba(16, 28, 62, 0.95) 0%, rgba(9, 15, 36, 0.98) 100%);
+  clip-path: polygon(0 40%, 50% 100%, 100% 40%, 100% 100%, 0 100%);
+  border-top: 1px solid rgba(0, 217, 255, 0.28);
+  z-index: 3;
+}
+
+/* Top Triangular Flap */
+.env-flap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 58%;
+  background: linear-gradient(180deg, rgba(22, 38, 80, 0.98) 0%, rgba(14, 24, 52, 0.95) 100%);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  border-bottom: 1px solid rgba(0, 217, 255, 0.35);
+  transform-origin: top center;
+  transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 4;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 4px;
+}
+
+/* Wax Seal */
+.env-wax-seal {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ff4d8d, #c2185b 70%, #880e4f 100%);
+  box-shadow: 0 4px 12px rgba(255, 42, 122, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(12px);
+  transition: transform 0.4s ease, opacity 0.3s ease;
+}
+
+.wax-heart {
+  font-size: 0.75rem;
+  color: #fff;
+  filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
+}
+
+/* Open Animation State */
+.envelope-wrapper.opening .env-flap {
+  transform: rotateX(170deg);
+  z-index: 1;
+}
+
+.envelope-wrapper.opening .env-wax-seal {
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+.envelope-wrapper.opening .env-letter-preview {
+  transform: translateY(-50px) scale(1.08);
+}
+
+/* Envelope Instruction Hint */
+.envelope-hint-row {
+  margin-top: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.35rem 1rem;
+  border-radius: 9999px;
+  background: rgba(14, 25, 55, 0.6);
+  border: 1px solid rgba(0, 217, 255, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 217, 255, 0.15);
+}
+
+.env-hint-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #ff2a7a;
+  box-shadow: 0 0 10px #ff2a7a, 0 0 20px #ff2a7a;
+  animation: envDotBlink 1.4s infinite alternate;
+}
+
+@keyframes envDotBlink {
+  0% { opacity: 0.4; transform: scale(0.85); }
+  100% { opacity: 1; transform: scale(1.3); }
+}
+
+.env-hint-text {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  letter-spacing: 0.05em;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* ==========================================================================
+   2. THE LETTER MODAL (Unfolding Card)
+   ========================================================================== */
+.letter-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease;
+}
+
+.letter-modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.letter-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 5, 14, 0.88);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.letter-unfold-container {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 520px;
+  background: linear-gradient(155deg, rgba(16, 27, 58, 0.96) 0%, rgba(8, 14, 32, 0.98) 100%);
+  border: 1.5px solid rgba(0, 217, 255, 0.45);
+  border-radius: 24px;
+  padding: 2.2rem 2rem 2rem;
+  box-shadow: 
+    0 25px 60px rgba(0, 0, 0, 0.9),
+    0 0 45px rgba(255, 42, 122, 0.35),
+    0 0 65px rgba(0, 217, 255, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  text-align: center;
+  transform: scale(0.92) translateY(20px);
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.letter-modal-overlay.active .letter-unfold-container {
+  transform: scale(1) translateY(0);
+}
+
+.letter-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1.2rem;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.letter-close-btn:hover {
+  color: #fff;
+  background: rgba(255, 42, 122, 0.3);
+  border-color: #ff2a7a;
+  transform: rotate(90deg);
+}
+
+.letter-stamp-seal {
+  font-size: 2.5rem;
+  margin-bottom: 0.6rem;
+  display: inline-block;
+  animation: sealFloat 3s ease-in-out infinite alternate;
+}
+
+@keyframes sealFloat {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-4px) scale(1.06); }
+}
+
+.letter-heading {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(1.8rem, 5vw, 2.4rem);
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #ffffff 30%, #ffd1e3 70%, #7dd3fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 25px rgba(255, 42, 122, 0.4);
+}
+
+.letter-body-content {
+  font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: #cbd5e1;
+  margin-bottom: 1.8rem;
+}
+
+.letter-sub-prompt {
+  font-weight: 600;
+  color: #5ef3ff;
+  margin-top: 0.6rem;
+  font-size: 1.12rem;
+  text-shadow: 0 0 14px rgba(0, 217, 255, 0.4);
+}
+
+.letter-action-row {
+  display: flex;
+  justify-content: center;
+}
+
+.open-story-btn {
+  background: linear-gradient(135deg, #ff2a7a 0%, #a855f7 50%, #00d2ff 100%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.98rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 0.9rem 2.2rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  box-shadow: 0 10px 30px rgba(255, 42, 122, 0.5), 0 0 35px rgba(0, 217, 255, 0.35);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.open-story-btn:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 16px 45px rgba(255, 42, 122, 0.65), 0 0 45px rgba(0, 217, 255, 0.5);
+}
+
+.open-story-btn:active {
+  transform: scale(0.97);
+}
+
+/* ==========================================================================
+   3. OUR STORY EXPERIENCE FULL-SCREEN OVERLAY & 4 STAGES
+   ========================================================================== */
+.our-story-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #02050e;
+  overflow-y: auto;
+  overflow-x: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.our-story-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.story-atmosphere-glow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: 
+    radial-gradient(ellipse at 15% 15%, rgba(0, 217, 255, 0.18) 0%, transparent 60%),
+    radial-gradient(ellipse at 85% 85%, rgba(255, 42, 122, 0.2) 0%, transparent 60%);
+}
+
+.story-top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: rgba(2, 5, 14, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.story-exit-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #cbd5e1;
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 0.45rem 1rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.story-exit-btn:hover {
+  background: rgba(255, 42, 122, 0.25);
+  border-color: #ff2a7a;
+  color: #fff;
+  transform: translateX(-2px);
+}
+
+.story-stage-indicator {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.stage-dot {
+  width: 24px;
+  height: 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  transition: all 0.3s ease;
+}
+
+.stage-dot.active {
+  width: 38px;
+  background: linear-gradient(90deg, #ff2a7a, #00d9ff);
+  box-shadow: 0 0 10px rgba(0, 217, 255, 0.6);
+}
+
+.stage-dot.passed {
+  background: #00d9ff;
+  opacity: 0.65;
+}
+
+.story-viewport {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  width: 100%;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.story-stage-pane {
+  width: 100%;
+  animation: stageFadeIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes stageFadeIn {
+  0% { opacity: 0; transform: translateY(18px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.stage-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.stage-badge {
+  display: inline-block;
+  padding: 0.25rem 0.85rem;
+  border-radius: 9999px;
+  background: rgba(0, 217, 255, 0.14);
+  border: 1px solid rgba(0, 217, 255, 0.35);
+  color: #7dd3fc;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  margin-bottom: 0.6rem;
+}
+
+.stage-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(1.8rem, 5.5vw, 2.6rem);
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.45rem;
+  text-shadow: 0 0 30px rgba(0, 217, 255, 0.3);
+}
+
+.stage-subtitle {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(0.95rem, 2.5vw, 1.12rem);
+  color: #94a3b8;
+  max-width: 580px;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   STAGE 1: QUIZ ENGINE (4 Question Types)
+   ========================================================================== */
+.quiz-progress-bar-wrap {
+  width: 100%;
+  max-width: 360px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  margin: 1.25rem auto 0.4rem;
+  overflow: hidden;
+}
+
+.quiz-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #ff2a7a, #00d9ff);
+  border-radius: 9999px;
+  box-shadow: 0 0 10px #00d9ff;
+  transition: width 0.4s ease;
+}
+
+.quiz-progress-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #5ef3ff;
+  letter-spacing: 0.1em;
+}
+
+.quiz-card {
+  background: rgba(14, 25, 55, 0.7);
+  border: 1.5px solid rgba(0, 217, 255, 0.25);
+  border-radius: 20px;
+  padding: 1.8rem 1.6rem;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+  margin-bottom: 1.25rem;
+  transition: all 0.3s ease;
+}
+
+.quiz-prompt-text {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(1.2rem, 3.8vw, 1.55rem);
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+  margin-bottom: 1.6rem;
+  line-height: 1.45;
+}
+
+/* Multiple Choice Grid */
+.quiz-options-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+}
+
+.quiz-opt-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  color: #f1f5f9;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.98rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.quiz-opt-btn:hover {
+  background: rgba(0, 217, 255, 0.12);
+  border-color: #00d9ff;
+  color: #ffffff;
+  transform: translateX(4px);
+  box-shadow: 0 4px 20px rgba(0, 217, 255, 0.25);
+}
+
+.quiz-opt-btn.selected-correct {
+  background: rgba(34, 197, 94, 0.2) !important;
+  border-color: #22c55e !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 25px rgba(34, 197, 94, 0.45);
+}
+
+.quiz-opt-btn.selected-wrong {
+  background: rgba(244, 63, 94, 0.2) !important;
+  border-color: #f43f5e !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 25px rgba(244, 63, 94, 0.45);
+}
+
+.quiz-opt-btn.selected-neutral {
+  background: rgba(255, 42, 122, 0.22) !important;
+  border-color: #ff2a7a !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 25px rgba(255, 42, 122, 0.45);
+}
+
+/* Photo Order / Comparison Grid (Which happened first?) */
+.quiz-photos-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 600px) {
+  .quiz-photos-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.quiz-photo-choice-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.quiz-photo-choice-card:hover {
+  transform: translateY(-4px);
+  border-color: #5ef3ff;
+  box-shadow: 0 10px 30px rgba(0, 217, 255, 0.3);
+}
+
+.quiz-photo-choice-card.selected-card {
+  border-color: #ff2a7a !important;
+  box-shadow: 0 0 35px rgba(255, 42, 122, 0.5) !important;
+  transform: scale(1.02);
+}
+
+.quiz-photo-thumb-wrap {
+  width: 100%;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+  background: #000;
+}
+
+.quiz-photo-thumb-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.quiz-photo-choice-card:hover .quiz-photo-thumb-wrap img {
+  transform: scale(1.05);
+}
+
+.quiz-photo-label-box {
+  padding: 0.85rem 1rem;
+  text-align: center;
+}
+
+.quiz-photo-tag {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.25rem;
+}
+
+.quiz-photo-caption {
+  font-size: 0.92rem;
+  color: #f1f5f9;
+  font-weight: 600;
+}
+
+/* Who was more likely to...? Buttons */
+.quiz-binary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.quiz-binary-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 1.6rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #ffffff;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: 0.08em;
+  transition: all 0.3s ease;
+}
+
+.quiz-binary-btn:hover {
+  background: rgba(0, 217, 255, 0.15);
+  border-color: #00d9ff;
+  box-shadow: 0 8px 30px rgba(0, 217, 255, 0.35);
+  transform: translateY(-3px);
+}
+
+/* Toast Reaction Feedback */
+.quiz-reaction-toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: linear-gradient(135deg, rgba(14, 25, 55, 0.96), rgba(8, 14, 32, 0.98));
+  border: 1.5px solid rgba(0, 217, 255, 0.5);
+  border-radius: 9999px;
+  padding: 0.75rem 1.6rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 25px rgba(0, 217, 255, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  z-index: 100;
+  animation: toastPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes toastPop {
+  0% { opacity: 0; transform: translateX(-50%) translateY(20px) scale(0.9); }
+  100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+.toast-emoji {
+  font-size: 1.25rem;
+}
+
+.toast-msg {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+}
+
+/* ==========================================================================
+   STAGE 2: CHOOSE YOUR MEMORY (5 Rounds)
+   ========================================================================== */
+.memory-round-pill {
+  display: inline-block;
+  padding: 0.3rem 0.95rem;
+  border-radius: 9999px;
+  background: rgba(255, 42, 122, 0.15);
+  border: 1px solid rgba(255, 42, 122, 0.4);
+  color: #ff7aa2;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  margin-top: 0.75rem;
+}
+
+.memory-choices-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .memory-choices-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}
+
+.memory-card {
+  background: rgba(14, 25, 55, 0.7);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.memory-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0, 217, 255, 0.6);
+  box-shadow: 0 14px 40px rgba(0, 217, 255, 0.25);
+}
+
+.memory-card.selected-memory {
+  transform: scale(1.03);
+  border-color: #ff2a7a !important;
+  box-shadow: 0 16px 50px rgba(255, 42, 122, 0.5), 0 0 35px rgba(0, 217, 255, 0.4) !important;
+  z-index: 2;
+}
+
+.memory-card.dimmed-memory {
+  opacity: 0.3;
+  transform: scale(0.96);
+  pointer-events: none;
+}
+
+.memory-img-box {
+  width: 100%;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+  background: #000;
+}
+
+.memory-img-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.memory-card:hover .memory-img-box img {
+  transform: scale(1.04);
+}
+
+.memory-details-box {
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.memory-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.memory-caption {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #94a3b8;
+  opacity: 0.85;
+  transition: opacity 0.4s ease, color 0.4s ease;
+}
+
+.memory-card.selected-memory .memory-caption {
+  opacity: 1;
+  color: #e0f2fe;
+}
+
+/* ==========================================================================
+   STAGE 3: THE FINAL QUESTION
+   ========================================================================== */
+.final-question-card {
+  background: rgba(14, 25, 55, 0.8);
+  border: 1.5px solid rgba(0, 217, 255, 0.35);
+  border-radius: 24px;
+  padding: 2.5rem 2rem;
+  max-width: 620px;
+  margin: 1.5rem auto;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 45px rgba(0, 217, 255, 0.2);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.final-slow-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: #ff7aa2;
+  margin-bottom: 0.75rem;
+}
+
+.final-question-heading {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+  margin-bottom: 1rem;
+}
+.final-question-heading span {
+  color: #5ef3ff;
+  text-shadow: 0 0 20px rgba(0, 217, 255, 0.5);
+}
+
+.final-question-prompt {
+  font-size: 1.15rem;
+  line-height: 1.6;
+  color: #cbd5e1;
+  margin-bottom: 1.8rem;
+  font-style: italic;
+}
+
+.final-textarea {
+  width: 100%;
+  background: rgba(6, 11, 26, 0.7);
+  border: 1.5px solid rgba(0, 217, 255, 0.3);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  color: #ffffff;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 120px;
+  outline: none;
+  transition: all 0.25s ease;
+}
+
+.final-textarea:focus {
+  border-color: #ff2a7a;
+  box-shadow: 0 0 20px rgba(255, 42, 122, 0.35);
+}
+
+.final-form-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.final-char-count {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.final-submit-btn {
+  background: linear-gradient(135deg, #ff2a7a 0%, #00d2ff 100%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.92rem;
+  letter-spacing: 0.08em;
+  padding: 0.75rem 1.8rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 8px 25px rgba(255, 42, 122, 0.4);
+  transition: all 0.3s ease;
+}
+
+.final-submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 35px rgba(255, 42, 122, 0.6);
+}
+
+.final-submit-status {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #86efac;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   STAGE 4: OUR STORY — WRAPPED & INTERACTIVE TIMELINE
+   ========================================================================== */
+.wrapped-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+.wrapped-card {
+  background: rgba(14, 25, 55, 0.7);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 1.4rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.4rem;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.wrapped-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0, 217, 255, 0.5);
+  box-shadow: 0 10px 30px rgba(0, 217, 255, 0.2);
+}
+
+.wrapped-icon {
+  font-size: 2rem;
+  margin-bottom: 0.2rem;
+}
+
+.wrapped-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #38bdf8;
+  text-transform: uppercase;
+}
+
+.wrapped-value {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 0 20px rgba(255, 42, 122, 0.5);
+}
+
+.wrapped-desc {
+  font-size: 0.84rem;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+/* Interactive Timeline */
+.timeline-intro-box {
+  text-align: center;
+  margin: 1.5rem 0 1.25rem;
+}
+
+.timeline-main-heading {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.08em;
+}
+
+.timeline-subheading {
+  font-size: 0.88rem;
+  color: #64748b;
+  margin-top: 0.25rem;
+}
+
+.interactive-timeline-wrap {
+  position: relative;
+  margin: 1.5rem 0 2.5rem;
+  padding-left: 2rem;
+}
+
+.interactive-timeline-wrap::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 9px;
+  width: 2px;
+  background: linear-gradient(180deg, #ff2a7a 0%, #a855f7 50%, #00d2ff 100%);
+  box-shadow: 0 0 10px #00d2ff;
+}
+
+.timeline-milestone-item {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.milestone-node {
+  position: absolute;
+  left: -2rem;
+  top: 12px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #02050e;
+  border: 3px solid #ff2a7a;
+  box-shadow: 0 0 12px #ff2a7a;
+  transition: all 0.3s ease;
+}
+
+.timeline-milestone-item.open .milestone-node {
+  border-color: #00d2ff;
+  box-shadow: 0 0 16px #00d2ff;
+  transform: scale(1.2);
+}
+
+.milestone-card {
+  background: rgba(14, 25, 55, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 1.2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.milestone-card:hover {
+  border-color: rgba(0, 217, 255, 0.4);
+  background: rgba(14, 25, 55, 0.85);
+}
+
+.milestone-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.milestone-era-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.milestone-era-date {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ff7aa2;
+}
+
+.milestone-tagline {
+  font-size: 0.88rem;
+  color: #94a3b8;
+  margin-top: 0.3rem;
+}
+
+.milestone-expandable-content {
+  display: none;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  animation: expandFade 0.4s ease forwards;
+}
+
+@keyframes expandFade {
+  0% { opacity: 0; transform: translateY(-6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.timeline-milestone-item.open .milestone-expandable-content {
+  display: block;
+}
+
+.milestone-desc-text {
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #cbd5e1;
+  margin-bottom: 0.85rem;
+}
+
+.milestone-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.65rem;
+}
+
+.milestone-gallery-thumb {
+  aspect-ratio: 4/3;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+}
+.milestone-gallery-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Quiet Final Card */
+.story-quiet-final-card {
+  text-align: center;
+  padding: 3rem 1.5rem 1rem;
+}
+
+.final-stars-accent {
+  color: #5ef3ff;
+  letter-spacing: 0.4em;
+  font-size: 0.9rem;
+  margin-bottom: 1.25rem;
+  opacity: 0.8;
+}
+
+.story-quiet-quote {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(1.2rem, 3.8vw, 1.6rem);
+  font-style: italic;
+  line-height: 1.7;
+  color: #f1f5f9;
+  max-width: 540px;
+  margin: 0 auto 2.2rem;
+  text-shadow: 0 0 25px rgba(255, 42, 122, 0.35);
+}
+
+.story-quiet-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.replay-story-btn {
+  background: linear-gradient(135deg, #ff2a7a 0%, #00d2ff 100%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 0.85rem 2rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  box-shadow: 0 8px 30px rgba(255, 42, 122, 0.45);
+  transition: all 0.3s ease;
+}
+
+.replay-story-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 14px 40px rgba(255, 42, 122, 0.6);
+}
+
+.close-story-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.85rem 1.8rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.close-story-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}

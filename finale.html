@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>I Love You | Finale</title>
   
-  <!-- Google Fonts: Great Vibes for glowing script header & JetBrains Mono for syntax highlighting -->
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Our Story Interactive Stylesheet -->
+  <link rel="stylesheet" href="our-story.css" />
 
   <style>
     /* ==========================================================================
@@ -652,6 +655,48 @@
       </div>
     </section>
 
+    <!-- NEW: GLOWING ENVELOPE (Sitting gracefully underneath the 3D heart animation) -->
+    <section class="envelope-hero-section" id="envelopeHeroSection" aria-label="Interactive Surprise Envelope">
+      <div class="envelope-wrapper" id="envelopeWrapper" role="button" tabindex="0" aria-label="Tap to open romantic letter">
+        <!-- Ambient ethereal glow & sparkle particles -->
+        <div class="envelope-ambient-glow" aria-hidden="true"></div>
+        <div class="envelope-sparkles" aria-hidden="true">
+          <span class="env-sparkle s1">✦</span>
+          <span class="env-sparkle s2">✧</span>
+          <span class="env-sparkle s3">✦</span>
+          <span class="env-sparkle s4">✧</span>
+        </div>
+
+        <!-- 3D Physical Style Envelope -->
+        <div class="envelope-card-3d" id="envelopeCard3D">
+          <div class="env-back"></div>
+          
+          <div class="env-letter-preview" id="envLetterPreview">
+            <div class="env-letter-mini-lines">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <span class="env-mini-heart">❤️</span>
+          </div>
+
+          <div class="env-pocket"></div>
+
+          <div class="env-flap" id="envFlap">
+            <div class="env-wax-seal" id="envWaxSeal">
+              <span class="wax-heart">❤️</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Instruction under envelope -->
+        <div class="envelope-hint-row">
+          <span class="env-hint-pulse"></span>
+          <span class="env-hint-text" id="envHintText">Open this...</span>
+        </div>
+      </div>
+    </section>
+
     <!-- 4. Footer Quote -->
     <section class="terminal-container" aria-label="Closing Sentiment">
       <div class="footer-quote">
@@ -661,6 +706,148 @@
     </section>
 
   </main>
+
+  <!-- ===================================================================
+       LETTER MODAL (Slides up & unfolds when envelope opens)
+       =================================================================== -->
+  <div class="letter-modal-overlay" id="letterModalOverlay" style="display: none;" aria-hidden="true">
+    <div class="letter-modal-backdrop" id="letterBackdrop"></div>
+    
+    <div class="letter-unfold-container" id="letterContainer" role="dialog" aria-modal="true" aria-labelledby="letterHeading">
+      <button type="button" class="letter-close-btn" id="letterCloseBtn" aria-label="Close letter">&times;</button>
+      
+      <div class="letter-paper">
+        <div class="letter-stamp-seal">💌</div>
+        <h2 class="letter-heading" id="letterHeading">Before you go...</h2>
+        
+        <div class="letter-body-content">
+          <p id="letterMessageText">I left one more little thing for you.</p>
+          <p class="letter-sub-prompt" id="letterSubPrompt">Let's see what you remember.</p>
+        </div>
+
+        <div class="letter-action-row">
+          <button type="button" class="open-story-btn" id="openOurStoryBtn">
+            <span class="btn-sparkle">✨</span>
+            <span id="openStoryBtnText">OPEN OUR STORY</span>
+            <span class="btn-arrow">→</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       OUR STORY INTERACTIVE EXPERIENCE FULL-SCREEN OVERLAY (4 STAGES)
+       =================================================================== -->
+  <div class="our-story-overlay" id="ourStoryOverlay" style="display: none;" aria-hidden="true">
+    <div class="story-atmosphere-glow" aria-hidden="true"></div>
+
+    <!-- Top Story Navigation Bar -->
+    <div class="story-top-bar">
+      <button type="button" class="story-exit-btn" id="storyExitBtn" title="Close and return to 3D Finale">
+        <span>✕ Close</span>
+      </button>
+      <div class="story-stage-indicator" id="storyStageIndicator">
+        <span class="stage-dot active" data-stage="1"></span>
+        <span class="stage-dot" data-stage="2"></span>
+        <span class="stage-dot" data-stage="3"></span>
+        <span class="stage-dot" data-stage="4"></span>
+      </div>
+    </div>
+
+    <!-- Stage Views Viewport -->
+    <div class="story-viewport" id="storyViewport">
+
+      <!-- STAGE 1: HOW WELL DO YOU REMEMBER US? -->
+      <section class="story-stage-pane" id="stage1Pane">
+        <div class="stage-header">
+          <span class="stage-badge">STAGE 01</span>
+          <h2 class="stage-title" id="stage1Title">HOW WELL DO YOU REMEMBER US?</h2>
+          <p class="stage-subtitle" id="stage1Subtitle">Let's see what survived in that memory of yours 👀</p>
+          
+          <div class="quiz-progress-bar-wrap">
+            <div class="quiz-progress-bar" id="quizProgressBar" style="width: 10%;"></div>
+          </div>
+          <div class="quiz-progress-label" id="quizProgressLabel">QUESTION 1 / 10</div>
+        </div>
+
+        <div class="quiz-card-container" id="quizCardContainer"></div>
+
+        <div class="quiz-reaction-toast" id="quizReactionToast" style="display: none;">
+          <span class="toast-emoji" id="quizReactionEmoji">✨</span>
+          <span class="toast-msg" id="quizReactionMsg"></span>
+        </div>
+      </section>
+
+      <!-- STAGE 2: CHOOSE YOUR MEMORY -->
+      <section class="story-stage-pane" id="stage2Pane" style="display: none;">
+        <div class="stage-header">
+          <span class="stage-badge">STAGE 02</span>
+          <h2 class="stage-title">CHOOSE YOUR MEMORY</h2>
+          <p class="stage-subtitle">Which one would you choose to relive?</p>
+          <div class="memory-round-pill" id="memoryRoundPill">ROUND 1 / 5</div>
+        </div>
+
+        <div class="memory-choices-grid" id="memoryChoicesGrid"></div>
+      </section>
+
+      <!-- STAGE 3: THE FINAL QUESTION -->
+      <section class="story-stage-pane" id="stage3Pane" style="display: none;">
+        <div class="final-question-card">
+          <span class="final-slow-badge">A MOMENT OF PAUSE</span>
+          <h2 class="final-question-heading">OKAY...<br><span>ONE LAST QUESTION.</span></h2>
+          <p class="final-question-prompt" id="finalQuestionPromptText">If you could relive one moment from our story, which one would it be?</p>
+
+          <form id="finalQuestionForm" class="final-question-form">
+            <textarea id="finalQuestionInput" class="final-textarea" rows="4" placeholder="Type your answer here..." required maxlength="600"></textarea>
+            <div class="final-form-footer">
+              <span class="final-char-count"><span id="finalCharCount">0</span>/600</span>
+              <button type="submit" class="final-submit-btn" id="finalSubmitBtn">
+                <span>SUBMIT</span>
+                <span>✨</span>
+              </button>
+            </div>
+          </form>
+
+          <div id="finalSubmitStatus" class="final-submit-status" style="display: none;"></div>
+        </div>
+      </section>
+
+      <!-- STAGE 4: OUR STORY — WRAPPED & TIMELINE -->
+      <section class="story-stage-pane" id="stage4Pane" style="display: none;">
+        <div class="stage-header">
+          <span class="stage-badge">STAGE 04</span>
+          <h2 class="stage-title" id="wrappedTitle">OUR STORY</h2>
+          <p class="stage-subtitle" id="wrappedSubtitle">A little collection of everything we were.</p>
+        </div>
+
+        <div class="wrapped-stats-grid" id="wrappedStatsGrid"></div>
+
+        <div class="timeline-intro-box">
+          <h3 class="timeline-main-heading">THE TIMELINE</h3>
+          <p class="timeline-subheading">Tap on any chapter to open the memories inside.</p>
+        </div>
+
+        <div class="interactive-timeline-wrap" id="interactiveTimelineWrap"></div>
+
+        <div class="story-quiet-final-card">
+          <div class="final-stars-accent">✦ ✦ ✦</div>
+          <p class="story-quiet-quote" id="storyQuietQuoteText">
+            "Some chapters end.<br>That doesn't mean they weren't beautiful."
+          </p>
+          <div class="story-quiet-actions">
+            <button type="button" class="replay-story-btn" id="replayStoryBtn">
+              <span>↺ REPLAY OUR STORY</span>
+            </button>
+            <button type="button" class="close-story-btn" id="closeStoryFinalBtn">
+              <span>CLOSE</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
 
   <!-- ==========================================================================
        CANVAS 3D PARTICLE HEART & FLOATING PORTAL BEAM SCRIPT
@@ -1024,5 +1211,9 @@
 
     })();
   </script>
+
+  <!-- Supabase JS Client & Our Story Interactive Engine -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="our-story.js"></script>
 </body>
 </html>
