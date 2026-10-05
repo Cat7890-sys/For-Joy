@@ -393,7 +393,7 @@ const SITE_TEXT_FIELDS = [
   { key: "finaleMainTitle", inputId: "textFinaleMainTitle", domId: "finaleMainTitle", default: "I LOVE YOU" },
   { key: "finaleInfinityBadgeText", inputId: "textFinaleInfinityBadge", domId: "finaleInfinityBadgeText", default: "∞ ALWAYS & FOREVER ∞" },
   { key: "finaleHintText", inputId: "textFinaleInteractiveHint", domId: "finaleHintText", default: "Drag or swipe to tilt • Tap to pulse" },
-  { key: "finaleClosingQuote", inputId: "textFinaleClosingQuote", domId: "letterClosingQuote", default: `"No matter where life takes us, I’ll always be grateful that our paths crossed. We shared some beautiful moments that I’ll always appreciate, and I genuinely hope this new chapter of your life brings you happiness, peace, and everything you deserve. Happy Birthday ❤️"` },
+  { key: "finaleClosingQuote", inputId: "textFinaleClosingQuote", domId: "letterClosingQuote", default: `"No matter where life takes us, I’ll always be grateful that our paths crossed. We shared some really beautiful moments that will always mean something to me, and I’ll always appreciate the memories we made together. I genuinely hope life brings you the happiness, peace, love, and everything else you deserve. I hope you have a beautiful birthday and that today reminds you just how special you are...Happy birthday once again ❤️"` },
   { key: "finaleAuthorName", inputId: "textFinaleAuthorName", domId: "letterAuthorName", default: "Wisani ❤️" },
   { key: "finaleReplayBtnText", inputId: "textFinaleReplayBtn", domId: "finaleReplayBtnText", default: "REPLAY EXPERIENCE" },
 
@@ -8557,10 +8557,11 @@ function initFinaleLetterController() {
     const activeQuote = currentSiteTexts?.finaleClosingQuote || defaultSiteTexts.finaleClosingQuote;
     const activeAuthor = currentSiteTexts?.finaleAuthorName || defaultSiteTexts.finaleAuthorName;
 
+    const activePrompt = siteContent?.our_story?.settings?.finalQuestionPrompt || "If this is the last thing you ever get to say to me, what would you want me to know..? You don’t have to answer if you don’t want to";
     if (headingEl) headingEl.textContent = "A Letter For You";
     if (quoteEl) quoteEl.textContent = activeQuote;
     if (authorEl) authorEl.textContent = activeAuthor;
-    if (promptEl) promptEl.textContent = "If you could relive one moment from our story, which one would it be?";
+    if (promptEl) promptEl.textContent = activePrompt;
   }
 
   if (envWrapper && letterModal && !envWrapper.dataset.bound) {
