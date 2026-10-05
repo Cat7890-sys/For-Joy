@@ -8577,6 +8577,7 @@ function initFinaleLetterController() {
         letterModal.style.display = "flex";
         void letterModal.offsetWidth;
         letterModal.classList.add("active");
+        document.body.style.overflow = "hidden";
       }, 700);
     }
 
@@ -8590,6 +8591,7 @@ function initFinaleLetterController() {
 
     function closeLetter() {
       letterModal.classList.remove("active");
+      document.body.style.overflow = "";
       setTimeout(() => {
         letterModal.style.display = "none";
         envWrapper.classList.remove("opening");
