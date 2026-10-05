@@ -56,5 +56,244 @@
     "MY EVERYTHING ❤️"
   ],
   "birthdayMessage": "Happy Birthday,Love ❤️\n\nJoy, I'm thinking of you today. I hope your day is full of joy, laughter, and people who cherish you. You deserve every good thing. Wishing you peace and happiness this year.\n\nHappy Birthday, Joy! 🎂",
-  "lastUpdated": "2026-10-04T08:25:40.727Z"
+  "photos": [
+    {
+      "id": "burst-1",
+      "name": "Sweet Smile",
+      "src": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80",
+      "caption": "Your radiant smile that brightens any room"
+    },
+    {
+      "id": "burst-2",
+      "name": "Sunlit Glow",
+      "src": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop&q=80",
+      "caption": "Golden hour glow"
+    },
+    {
+      "id": "burst-3",
+      "name": "Pure Joy",
+      "src": "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&auto=format&fit=crop&q=80",
+      "caption": "Laughing without a care in the world"
+    }
+  ],
+  "memories": [
+    {
+      "id": "mem-1",
+      "title": "The Very First Day We Met",
+      "caption": "I still remember the butterflies and how easily we talked for hours like we had known each other forever.",
+      "mediaUrl": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop&q=80",
+      "date": "Where It All Began",
+      "isHighlight": true
+    },
+    {
+      "id": "mem-2",
+      "title": "Our Favorite Late-Night Drives",
+      "caption": "Singing at the top of our lungs with the windows rolled down, zero plans, just pure happiness.",
+      "mediaUrl": "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=80",
+      "date": "Under The Stars",
+      "isHighlight": false
+    },
+    {
+      "id": "mem-3",
+      "title": "That Unstoppable Laughter",
+      "caption": "Tears in our eyes laughing at something nobody else found funny. That's my favorite version of us.",
+      "mediaUrl": "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800&auto=format&fit=crop&q=80",
+      "date": "Pure Joy",
+      "isHighlight": true
+    }
+  ],
+  "love_notes": [
+    {
+      "id": "wish-love",
+      "author": "With all my heart ❤️",
+      "role": "Forever Yours 💌",
+      "avatar": "❤️",
+      "message": "Happy Birthday, beautiful! I put together this whole birthday chapter experience because you deserve the world and so much more. Thank you for making my life so incredibly bright and loving. I love you with all my heart, today and every single day! ❤️✨",
+      "sticker": "💖",
+      "photos": [
+        "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=600&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&auto=format&fit=crop&q=80"
+      ],
+      "videoUrl": null,
+      "audioUrl": null,
+      "date": "Today",
+      "likes": 38,
+      "type": "photos"
+    }
+  ],
+  "our_story": {
+    "settings": {
+      "letterHeading": "Before you go...",
+      "letterMessage": "I left one more little thing for you.",
+      "letterSubPrompt": "Let's see what you remember.",
+      "letterButtonText": "OPEN OUR STORY",
+      "quizTitle": "HOW WELL DO YOU REMEMBER US?",
+      "quizSubtitle": "Let's see what survived in that memory of yours 👀",
+      "finalQuestionPrompt": "If you could relive one moment from our story, which one would it be?",
+      "wrappedTitle": "OUR STORY",
+      "wrappedSubtitle": "A little collection of everything we were.",
+      "finalQuote": "Some chapters end.\nThat doesn't mean they weren't beautiful."
+    },
+    "questions": [
+      {
+        "id": "q1",
+        "type": "photo_order",
+        "prompt": "WHICH HAPPENED FIRST?",
+        "photoA": "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=600&auto=format&fit=crop&q=80",
+        "labelA": "That sunny afternoon stroll...",
+        "photoB": "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&auto=format&fit=crop&q=80",
+        "labelB": "That cozy late night ramen date...",
+        "correctAnswer": "A",
+        "reactionCorrect": "Look at your memory working overtime! ✨",
+        "reactionWrong": "You got the timeline mixed up! 😭"
+      },
+      {
+        "id": "q2",
+        "type": "who_likely",
+        "prompt": "Who was more likely to forget what they were saying halfway through a story?",
+        "options": ["YOU", "ME"],
+        "reaction": "Accurate as always. 😂"
+      },
+      {
+        "id": "q3",
+        "type": "multiple_choice",
+        "prompt": "What was the very first song we both claimed as 'our song'?",
+        "options": [
+          "Golden Hour",
+          "Until I Found You",
+          "Die For You",
+          "Perfect"
+        ],
+        "correctIndex": 0,
+        "reactionCorrect": "A classic that will never get old. 🎵",
+        "reactionWrong": "How could you forget our melody? 😭"
+      },
+      {
+        "id": "q4",
+        "type": "memorable_choice",
+        "prompt": "Which of these moments lives rent-free in your mind?",
+        "options": [
+          "That road trip where we sang at the top of our lungs",
+          "That quiet night we sat talking about our future for hours"
+        ],
+        "reaction": "That really was an unforgettable moment. ❤️"
+      },
+      {
+        "id": "q5",
+        "type": "who_likely",
+        "prompt": "Who was more likely to suggest getting food at 1:00 AM on a random Tuesday?",
+        "options": ["YOU", "ME"],
+        "reaction": "Guilty as charged! 🍟"
+      },
+      {
+        "id": "q6",
+        "type": "photo_order",
+        "prompt": "WHICH HAPPENED FIRST?",
+        "photoA": "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&auto=format&fit=crop&q=80",
+        "labelA": "The rooftop sunset smiles...",
+        "photoB": "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&auto=format&fit=crop&q=80",
+        "labelB": "The spontaneous weekend getaway drive...",
+        "correctAnswer": "A",
+        "reactionCorrect": "Spot on! That memory is golden.",
+        "reactionWrong": "Almost, but the rooftop came first! 🌅"
+      },
+      {
+        "id": "q7",
+        "type": "multiple_choice",
+        "prompt": "What is my absolute favorite thing about you?",
+        "options": [
+          "The way your eyes crinkle when you really laugh",
+          "Your kindness and gentle heart",
+          "How you make any bad day feel safe",
+          "Every single thing about you"
+        ],
+        "correctIndex": 3,
+        "reactionCorrect": "Always and forever. ❤️",
+        "reactionWrong": "It's all of it, every single thing. ❤️"
+      }
+    ],
+    "memoryRounds": [
+      {
+        "round": 1,
+        "titleA": "The First Spontaneous Drive",
+        "photoA": "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=80",
+        "captionA": "Windows down, sunset in our rearview mirror, and zero plans on where we were going.",
+        "titleB": "The Rainy Day Cafe",
+        "photoB": "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&auto=format&fit=crop&q=80",
+        "captionB": "Sitting by the foggy window sipping hot drinks, wishing the rain would never stop."
+      },
+      {
+        "round": 2,
+        "titleA": "The Starlit Rooftop Talks",
+        "photoA": "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=800&auto=format&fit=crop&q=80",
+        "captionA": "Cold breeze, sharing a jacket, and spilling our deepest dreams.",
+        "titleB": "The Unfiltered Laughs",
+        "photoB": "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800&auto=format&fit=crop&q=80",
+        "captionB": "Tears in our eyes from laughing so hard at something nobody else found funny."
+      },
+      {
+        "round": 3,
+        "titleA": "The First Celebration",
+        "photoA": "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&auto=format&fit=crop&q=80",
+        "captionA": "Celebrating every little milestone like it was the grandest victory.",
+        "titleB": "The Sunset Silhouette",
+        "photoB": "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&auto=format&fit=crop&q=80",
+        "captionB": "Standing together watching the sky turn pink and gold, time standing still."
+      }
+    ],
+    "stats": [
+      { "id": "s1", "icon": "📸", "label": "MEMORIES", "value": "47", "description": "Photos, polaroids, and quiet snapshots" },
+      { "id": "s2", "icon": "🎵", "label": "SONGS SHARED", "value": "84", "description": "Tracks that always sound like you" },
+      { "id": "s3", "icon": "😂", "label": "INSIDE JOKES", "value": "∞", "description": "Too many to ever explain to anyone else" },
+      { "id": "s4", "icon": "🎬", "label": "ANIME WATCHED TOGETHER", "value": "12", "description": "Late nights with snacks and cliffhangers" },
+      { "id": "s5", "icon": "💬", "label": "CONVERSATIONS", "value": "Countless", "description": "From good mornings to sleepy 3am calls" },
+      { "id": "s6", "icon": "❤️", "label": "MOMENTS WORTH REMEMBERING", "value": "Priceless", "description": "Some things don't need a number." }
+    ],
+    "timeline": [
+      {
+        "id": "t1",
+        "eraTitle": "THE BEGINNING",
+        "eraDate": "Day One",
+        "tagline": "Where two worlds collided",
+        "description": "From hesitant hellos to discovering how easily we could make each other smile. The very first spark of something rare.",
+        "photos": ["https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=600&auto=format&fit=crop&q=80"]
+      },
+      {
+        "id": "t2",
+        "eraTitle": "THE RANDOM ERA",
+        "eraDate": "The Early Months",
+        "tagline": "Spontaneous drives & late nights",
+        "description": "Late night drives with no destination, playlists on shuffle, and laughing until our stomachs hurt. The era of pure freedom.",
+        "photos": ["https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&auto=format&fit=crop&q=80"]
+      },
+      {
+        "id": "t3",
+        "eraTitle": "THE GOOD TIMES",
+        "eraDate": "Unstoppable Joy",
+        "tagline": "Unfiltered laughter & adventures",
+        "description": "Every coffee date, every shared meal, every inside joke that became part of our secret language.",
+        "photos": ["https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&auto=format&fit=crop&q=80"]
+      },
+      {
+        "id": "t4",
+        "eraTitle": "THE MEMORIES",
+        "eraDate": "The Ones That Stayed",
+        "tagline": "Quiet comfort & deep peace",
+        "description": "Realizing that home isn't a place, it's a person. The moments of quiet understanding that anchored us.",
+        "photos": ["https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=600&auto=format&fit=crop&q=80"]
+      },
+      {
+        "id": "t5",
+        "eraTitle": "TODAY",
+        "eraDate": "Happy Birthday, Joy",
+        "tagline": "Celebrating the one I adore",
+        "description": "Standing here today celebrating you. Grateful for every chapter we wrote and every page we shared.",
+        "photos": ["https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&auto=format&fit=crop&q=80"]
+      }
+    ]
+  },
+  "backgroundUrl": "",
+  "musicUrl": "",
+  "lastUpdated": "2026-10-05T09:44:00.000Z"
 }

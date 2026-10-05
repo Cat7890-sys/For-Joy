@@ -4268,15 +4268,17 @@ body.has-bg-image .memory-card {
 }
 
 /* ==========================================================================
-   CHAPTER 3: LOVE NOTES & WISHES LETTER CARDS
+   CHAPTER 3: LOVE NOTES & WISHES LETTER CARDS & PHOTO GALLERY GRID
    ========================================================================== */
 .love-notes-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1.5rem;
   margin-top: 1.5rem;
+  width: 100%;
 }
 
+.love-note-card,
 .love-note-letter-card {
   background: rgba(14, 21, 50, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -4287,9 +4289,12 @@ body.has-bg-image .memory-card {
   position: relative;
   display: flex;
   flex-direction: column;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.love-note-card:hover,
 .love-note-letter-card:hover {
   transform: translateY(-4px);
   border-color: rgba(255, 42, 122, 0.4);
