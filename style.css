@@ -2724,15 +2724,16 @@ body.has-bg-image .memory-card {
 .lightbox-modal {
   position: fixed;
   inset: 0;
-  background: rgba(3, 6, 20, 0.95);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  z-index: 200;
+  background: rgba(3, 6, 20, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 9999;
   display: none;
   align-items: center;
   justify-content: center;
   padding: 1.5rem 1rem;
   overflow-y: auto;
+  cursor: pointer;
 }
 
 .lightbox-modal.active {
@@ -2743,27 +2744,28 @@ body.has-bg-image .memory-card {
   position: fixed;
   top: 1.25rem;
   right: 1.25rem;
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
-  background: rgba(14, 21, 51, 0.85);
+  background: rgba(14, 21, 51, 0.88);
   border: 1.5px solid rgba(255, 255, 255, 0.35);
   color: #ffffff;
-  font-size: 1.6rem;
+  font-size: 1.7rem;
+  line-height: 1;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 220;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.65);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 10005;
 }
 
 .lightbox-close-btn:hover {
   background: #ff0055;
   border-color: #ff0055;
-  transform: scale(1.1);
-  box-shadow: 0 0 20px rgba(255, 0, 85, 0.6);
+  transform: scale(1.12) rotate(90deg);
+  box-shadow: 0 0 24px rgba(255, 0, 85, 0.7);
 }
 
 .lightbox-content {
@@ -2775,16 +2777,28 @@ body.has-bg-image .memory-card {
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  cursor: default;
+  animation: lightboxZoomIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* The picture pops up to the screen in full with NO frame holding it */
+@keyframes lightboxZoomIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* The picture pops up to the screen in full with natural aspect ratio & NO frame holding it */
 .lightbox-img {
   max-width: 90vw;
-  max-height: 64vh;
+  max-height: 72vh;
   object-fit: contain;
-  border: none !important; /* NO FRAME HOLDING IT in pop up mode */
-  border-radius: 14px;
+  border: none !important;
+  border-radius: 16px;
   box-shadow: 0 25px 80px rgba(0, 0, 0, 0.95),
               0 0 45px rgba(255, 42, 122, 0.35);
   background: transparent !important;
@@ -4322,29 +4336,180 @@ body.has-bg-image .memory-card {
   white-space: pre-wrap;
 }
 
+/* ==========================================================================
+   LOVE NOTES — SIZABLE, ORGANIZED PHOTO GALLERY & ASPECT RATIO FRAMES
+   ========================================================================== */
+
+.love-note-photos-gallery,
+.love-note-media-grid,
 .love-note-photos-grid {
   display: grid;
-  gap: 0.5rem;
-  margin-bottom: 0.85rem;
-  border-radius: 12px;
-  overflow: hidden;
+  gap: 0.85rem;
+  margin-top: 0.4rem;
+  margin-bottom: 1.15rem;
+  width: 100%;
 }
 
-.love-note-photos-grid.count-1 { grid-template-columns: 1fr; }
-.love-note-photos-grid.count-2 { grid-template-columns: 1fr 1fr; }
-.love-note-photos-grid.count-3 { grid-template-columns: 2fr 1fr 1fr; }
+/* 1 Photo: Generous showcase layout that respects natural proportions */
+.love-note-photos-gallery.count-1,
+.love-note-media-grid.count-1,
+.love-note-photos-grid.count-1 {
+  grid-template-columns: 1fr;
+}
 
+.love-note-photos-gallery.count-1 .love-note-photo-frame,
+.love-note-media-grid.count-1 .love-note-media-item {
+  min-height: 240px;
+  max-height: 400px;
+}
+
+/* 2 Photos: Balanced 2-column side-by-side gallery */
+.love-note-photos-gallery.count-2,
+.love-note-media-grid.count-2,
+.love-note-photos-grid.count-2 {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.love-note-photos-gallery.count-2 .love-note-photo-frame,
+.love-note-media-grid.count-2 .love-note-media-item {
+  min-height: 180px;
+  max-height: 280px;
+}
+
+/* 3 Photos: 1 wide featured photo + 2 balanced companion photos */
+.love-note-photos-gallery.count-3,
+.love-note-media-grid.count-3,
+.love-note-photos-grid.count-3 {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.love-note-photos-gallery.count-3 .love-note-photo-frame:first-child,
+.love-note-media-grid.count-3 .love-note-media-item:first-child {
+  grid-column: 1 / -1;
+  min-height: 200px;
+  max-height: 320px;
+}
+
+.love-note-photos-gallery.count-3 .love-note-photo-frame:not(:first-child),
+.love-note-media-grid.count-3 .love-note-media-item:not(:first-child) {
+  min-height: 150px;
+  max-height: 230px;
+}
+
+/* Individual Frame: Transparent internally, delicate glowing glass border */
+.love-note-photo-frame,
+.love-note-media-item {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.02); /* Transparent internal background */
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.38),
+              0 0 14px rgba(255, 42, 122, 0.09);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.28s ease,
+              box-shadow 0.28s ease;
+  padding: 0.3rem;
+}
+
+.love-note-photo-frame:hover,
+.love-note-media-item:hover {
+  transform: translateY(-2px) scale(1.015);
+  border-color: rgba(255, 42, 122, 0.55);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5),
+              0 0 24px rgba(255, 42, 122, 0.28);
+}
+
+/* Aspect-ratio preservation: Contain full photo without stretching/cropping */
+.love-note-photo-img,
+.love-note-photo-frame img,
+.love-note-media-item img,
 .love-note-thumb {
   width: 100%;
-  height: 120px;
-  object-fit: cover;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: transform 0.25s ease;
+  height: 100%;
+  max-height: 100%;
+  object-fit: contain !important; /* Never crop or distort */
+  border-radius: 12px;
+  display: block;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.love-note-thumb:hover {
-  transform: scale(1.03);
+.love-note-photo-frame:hover .love-note-photo-img,
+.love-note-photo-frame:hover img,
+.love-note-media-item:hover img {
+  transform: scale(1.02);
+}
+
+/* Adaptive Orientation Aspect Ratios */
+.love-note-photo-frame.is-portrait {
+  aspect-ratio: 3 / 4;
+}
+
+.love-note-photo-frame.is-landscape {
+  aspect-ratio: 16 / 10;
+}
+
+.love-note-photo-frame.is-square {
+  aspect-ratio: 1 / 1;
+}
+
+/* Floating Zoom Indicator on Hover */
+.love-note-photo-zoom-badge {
+  position: absolute;
+  bottom: 0.65rem;
+  right: 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.65rem;
+  background: rgba(14, 21, 51, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+  opacity: 0.85;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: all 0.22s ease;
+  pointer-events: none;
+}
+
+.love-note-photo-frame:hover .love-note-photo-zoom-badge {
+  opacity: 1;
+  background: rgba(255, 42, 122, 0.88);
+  border-color: #ff0055;
+  box-shadow: 0 4px 16px rgba(255, 0, 85, 0.45);
+  transform: scale(1.05);
+}
+
+.love-note-photo-zoom-badge .zoom-icon {
+  font-size: 0.78rem;
+}
+
+@media (max-width: 640px) {
+  .love-note-photos-gallery.count-2,
+  .love-note-media-grid.count-2,
+  .love-note-photos-gallery.count-3,
+  .love-note-media-grid.count-3 {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .love-note-photos-gallery.count-1 .love-note-photo-frame,
+  .love-note-media-grid.count-1 .love-note-media-item {
+    min-height: 200px;
+    max-height: 320px;
+  }
 }
 
 .love-note-video-box {

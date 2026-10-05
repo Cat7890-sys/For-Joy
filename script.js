@@ -3385,12 +3385,28 @@ function initLoveNotesSystem() {
   renderLoveNotes();
   setupLoveNotesModal();
   setupAdminLoveNotes();
+  setupLoveNotesFilters();
   fetchLoveNotesFromSupabase();
 }
 
-function renderLoveNotes() {
+function setupLoveNotesFilters() {
+  const tabs = document.querySelectorAll("#guestbookFilterTabs .guestbook-tab-btn");
+  if (!tabs || tabs.length === 0) return;
+  tabs.forEach(btn => {
+    btn.addEventListener("click", () => {
+      tabs.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const filter = btn.dataset.filter || "all";
+      renderLoveNotes(filter);
+      renderGuestbookGallery(filter);
+    });
+  });
+}
+
+function renderLoveNotes(filter = currentGuestbookFilter) {
   const loveNotesGrid = document.getElementById("loveNotesCardsGrid") || document.getElementById("loveNotesGrid");
   if (!loveNotesGrid) return;
+  currentGuestbookFilter = filter || "all";
 
   const countBadge = document.getElementById("guestbookCount");
   if (countBadge) {
@@ -3418,7 +3434,19 @@ function renderLoveNotes() {
   promptCard.addEventListener("click", openSignGuestbook);
   loveNotesGrid.appendChild(promptCard);
 
-  guestbookMessages.forEach((item) => {
+  // Filter messages based on active tab
+  let filtered = guestbookMessages;
+  if (currentGuestbookFilter === "text") {
+    filtered = guestbookMessages.filter(m => (!m.photos || m.photos.length === 0) && !m.videoUrl && !m.audioUrl);
+  } else if (currentGuestbookFilter === "photo") {
+    filtered = guestbookMessages.filter(m => m.photos && m.photos.length > 0);
+  } else if (currentGuestbookFilter === "video") {
+    filtered = guestbookMessages.filter(m => Boolean(m.videoUrl));
+  } else if (currentGuestbookFilter === "audio") {
+    filtered = guestbookMessages.filter(m => Boolean(m.audioUrl));
+  }
+
+  filtered.forEach((item) => {
     const card = document.createElement("div");
     card.className = "love-note-card";
     card.id = `loveNoteCard_${item.id}`;
@@ -3426,16 +3454,20 @@ function renderLoveNotes() {
     const isLiked = Boolean(item.likedByUser);
     const stickerHtml = item.sticker ? `<span class="love-note-sticker">${escapeHtml(item.sticker)}</span>` : "";
 
-    // Photos grid (up to 3)
+    // Sizable, Organised Photos Gallery (Aspect-Ratio Preserving, Transparent Glass Frame)
     let photosHtml = "";
     if (item.photos && item.photos.length > 0) {
       const pCount = Math.min(item.photos.length, 3);
       const imgTags = item.photos.slice(0, 3).map((src, idx) => `
-        <div class="love-note-media-item" data-photo-src="${escapeHtml(src)}">
-          <img src="${src}" alt="Note photo ${idx + 1}" loading="lazy" />
+        <div class="love-note-photo-frame" data-photo-src="${escapeHtml(src)}" data-note-author="${escapeHtml(item.author || 'Loved One')}" data-note-msg="${escapeHtml(item.message || '')}" data-note-date="${escapeHtml(item.date || 'Today')}">
+          <img src="${src}" alt="Photo ${idx + 1} from ${escapeHtml(item.author)}" loading="lazy" class="love-note-photo-img" onload="if(this.naturalWidth && this.naturalHeight){const r=this.naturalWidth/this.naturalHeight; if(r>1.15)this.parentElement.classList.add('is-landscape'); else if(r<0.88)this.parentElement.classList.add('is-portrait'); else this.parentElement.classList.add('is-square');}" />
+          <div class="love-note-photo-zoom-badge">
+            <span class="zoom-icon">🔍</span>
+            <span class="zoom-label">View Full</span>
+          </div>
         </div>
       `).join("");
-      photosHtml = `<div class="love-note-media-grid count-${pCount}">${imgTags}</div>`;
+      photosHtml = `<div class="love-note-photos-gallery count-${pCount}">${imgTags}</div>`;
     }
 
     // Video Box
@@ -3481,11 +3513,17 @@ function renderLoveNotes() {
       </div>
     `;
 
-    // Click photo to open lightbox
-    card.querySelectorAll(".love-note-media-item").forEach(el => {
-      el.addEventListener("click", () => {
-        const src = el.getAttribute("data-photo-src");
-        if (src) openLightbox(src, `${item.author}'s photo wish`);
+    // Click photo to open lightbox with natural aspect ratio and smooth zoom
+    card.querySelectorAll(".love-note-photo-frame, .love-note-media-item").forEach((frameEl, photoIdx) => {
+      frameEl.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const src = frameEl.getAttribute("data-photo-src");
+        const author = frameEl.getAttribute("data-note-author") || item.author || "Loved One";
+        const msg = frameEl.getAttribute("data-note-msg") || item.message || "";
+        const date = frameEl.getAttribute("data-note-date") || item.date || "Today";
+        if (src) {
+          openLightbox(src, msg, `${author}'s Birthday Note 💌`, date);
+        }
       });
     });
 
