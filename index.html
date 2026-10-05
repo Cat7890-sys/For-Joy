@@ -333,19 +333,7 @@
                 </div>
               </div>
 
-              <!-- Emotional Closing Passage (Positioned cleanly below the 3D heart) -->
-              <div class="finale-quote-box">
-                <p class="finale-quote-text" id="finaleClosingQuote">
-                  "No matter how many birthdays come and go, every single second with you will always remain my favorite chapter. Thank you for being my peace, my smile, and my greatest adventure. Happy Birthday, my love."
-                </p>
-                <div class="finale-author-signature">
-                  <span class="finale-sig-line"></span>
-                  <span class="finale-sig-name" id="finaleAuthorName">Forever Yours ❤️</span>
-                  <span class="finale-sig-line"></span>
-                </div>
-              </div>
-
-              <!-- 4. GLOWING LETTER / ENVELOPE (Positioned below the message text) -->
+              <!-- 4. GLOWING LETTER / ENVELOPE (Positioned below the 3D heart) -->
               <section class="envelope-hero-section" id="envelopeHeroSection" aria-label="Interactive Surprise Envelope">
                 <div class="envelope-wrapper" id="envelopeWrapper" role="button" tabindex="0" aria-label="Tap to open romantic letter">
                   <!-- Ambient ethereal glow & sparkle particles -->
@@ -555,7 +543,7 @@
         <button type="button" class="customize-tab-btn" data-tab="tabPhotos">📸 Burst Photos (<span id="panelPhotoCount">0</span>)</button>
         <button type="button" class="customize-tab-btn" data-tab="tabMemoriesAdmin">🎞️ Memories (<span id="panelMemoriesCount">0</span>)</button>
         <button type="button" class="customize-tab-btn" data-tab="tabLoveNotesAdmin">💌 Love Notes (<span id="panelLoveNotesCount">0</span>)</button>
-        <button type="button" class="customize-tab-btn" data-tab="tabOurStoryAdmin">📖 Our Story</button>
+        <button type="button" class="customize-tab-btn" data-tab="tabOurStoryAdmin">💌 Finale Letter</button>
         <button type="button" class="customize-tab-btn" data-tab="tabBackground">🖼️ Background</button>
         <button type="button" class="customize-tab-btn" data-tab="tabMusic">🎵 Music</button>
         <button type="button" class="customize-tab-btn" data-tab="tabBurst">💥 Burst & FX</button>
@@ -1363,19 +1351,19 @@
           </div>
         </div>
 
-        <!-- ================= TAB: OUR STORY ADMIN ================= -->
+        <!-- ================= TAB: FINALE LETTER ADMIN ================= -->
         <div id="tabOurStoryAdmin" class="customize-pane">
           <div class="pane-header-row">
             <div>
-              <h3 class="pane-heading">📖 Our Story Experience Management</h3>
-              <p class="pane-subheading">Customize the envelope letter invitation, 7 quiz questions, 3 memory rounds, private final written submissions, wrapped statistics, and timeline memories.</p>
+              <h3 class="pane-heading">💌 Finale Letter &amp; Final Question</h3>
+              <p class="pane-subheading">Customize the floating envelope letter, the closing emotional message, the final question prompt, and view private visitor answers.</p>
             </div>
             <div class="pane-actions-row">
               <button type="button" id="adminSaveOurStoryBtn" class="primary-btn">
-                <span>💾 Save Our Story to Supabase</span>
+                <span>💾 Save Finale to Supabase</span>
               </button>
               <button type="button" id="adminSaveOurStoryToGitHubBtn" class="primary-btn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-                <span>🚀 Save & Commit to GitHub</span>
+                <span>🚀 Save &amp; Commit to GitHub</span>
               </button>
               <button type="button" id="adminRefreshOurStoryBtn" class="secondary-btn">
                 <span>🔄 Refresh Data</span>
@@ -1388,77 +1376,38 @@
 
           <!-- Sub-Section 1: Envelope & Letter Settings -->
           <div class="admin-content-section">
-            <h4 class="admin-section-title">1. Envelope & Letter Invitation Copy</h4>
+            <h4 class="admin-section-title">1. Floating Letter &amp; Opening Copy</h4>
             <div class="form-grid-2">
               <div class="form-group">
                 <label for="storyLetterHeadingInput">Letter Heading</label>
-                <input type="text" id="storyLetterHeadingInput" class="form-input" value="Before you go..." />
+                <input type="text" id="storyLetterHeadingInput" class="form-input" value="A Letter For You" />
               </div>
               <div class="form-group">
-                <label for="storyLetterButtonTextInput">Button Text</label>
-                <input type="text" id="storyLetterButtonTextInput" class="form-input" value="OPEN OUR STORY" />
+                <label for="storyLetterAuthorInput">Signature / Author</label>
+                <input type="text" id="storyLetterAuthorInput" class="form-input" value="Wisani ❤️" />
               </div>
             </div>
             <div class="form-group">
-              <label for="storyLetterMessageInput">Letter Main Message</label>
-              <input type="text" id="storyLetterMessageInput" class="form-input" value="I left one more little thing for you." />
-            </div>
-            <div class="form-group">
-              <label for="storyLetterSubPromptInput">Letter Sub-Prompt</label>
-              <input type="text" id="storyLetterSubPromptInput" class="form-input" value="Let's see what you remember." />
+              <label for="storyLetterClosingQuoteInput">Closing Emotional Message</label>
+              <textarea id="storyLetterClosingQuoteInput" rows="3" class="form-textarea">"No matter where life takes us, I’ll always be grateful that our paths crossed. We shared some beautiful moments that I’ll always appreciate, and I genuinely hope this new chapter of your life brings you happiness, peace, and everything you deserve. Happy Birthday ❤️"</textarea>
             </div>
           </div>
 
-          <!-- Sub-Section 2: Stage 1 Quiz Questions (7 items) -->
+          <!-- Sub-Section 2: Final Question & Submitted Answers -->
           <div class="admin-content-section">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-              <h4 class="admin-section-title" style="margin-bottom: 0;">2. Stage 1: Quiz Questions (<span id="adminQuizCount">7</span>)</h4>
-              <button type="button" id="adminAddQuizQuestionBtn" class="secondary-btn" style="padding: 0.35rem 0.8rem; font-size: 0.8rem;">+ Add Question</button>
-            </div>
-            <div id="adminQuizQuestionsList" style="display: flex; flex-direction: column; gap: 0.85rem;">
-              <!-- Rendered dynamically -->
-            </div>
-          </div>
-
-          <!-- Sub-Section 3: Stage 2 Memory Rounds (3 rounds) -->
-          <div class="admin-content-section">
-            <h4 class="admin-section-title">3. Stage 2: Memory Choice Rounds (3 Rounds)</h4>
-            <div id="adminMemoryRoundsList" style="display: flex; flex-direction: column; gap: 1rem;">
-              <!-- Rendered dynamically -->
-            </div>
-          </div>
-
-          <!-- Sub-Section 4: Stage 3 Final Question & Submitted Answers -->
-          <div class="admin-content-section">
-            <h4 class="admin-section-title">4. Stage 3: Final Question &amp; Private Visitor Submissions</h4>
+            <h4 class="admin-section-title">2. Final Question &amp; Private Visitor Submissions</h4>
             <div class="form-group">
               <label for="storyFinalQuestionPromptInput">Final Question Prompt</label>
               <input type="text" id="storyFinalQuestionPromptInput" class="form-input" value="If you could relive one moment from our story, which one would it be?" />
             </div>
             <div style="margin-top: 1rem;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <label style="font-weight: 700; color: #ff85c0; font-size: 0.9rem;">💌 FINAL QUESTION RESPONSES (Admin Private)</label>
+                <label style="font-weight: 700; color: #ff85c0; font-size: 0.9rem;">💌 PRIVATE WRITTEN SUBMISSIONS (Admin View Only)</label>
                 <button type="button" id="adminRefreshSubmissionsBtn" class="secondary-btn" style="padding: 0.3rem 0.75rem; font-size: 0.78rem;">🔄 Check Submissions</button>
               </div>
               <div id="adminSubmissionsList" style="background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; padding: 0.85rem; max-height: 280px; overflow-y: auto;">
                 <p style="color: #94a3b8; font-size: 0.82rem; margin: 0;">Loading responses from Supabase...</p>
               </div>
-            </div>
-          </div>
-
-          <!-- Sub-Section 5: Stage 4 Wrapped Stats -->
-          <div class="admin-content-section">
-            <h4 class="admin-section-title">5. Stage 4: Wrapped Statistics Cards</h4>
-            <div id="adminWrappedStatsList" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
-              <!-- Rendered dynamically -->
-            </div>
-          </div>
-
-          <!-- Sub-Section 6: Interactive Timeline -->
-          <div class="admin-content-section">
-            <h4 class="admin-section-title">6. Interactive Timeline Chapters</h4>
-            <div id="adminTimelineList" style="display: flex; flex-direction: column; gap: 0.85rem;">
-              <!-- Rendered dynamically -->
             </div>
           </div>
         </div>
@@ -1629,141 +1578,85 @@
     <div class="letter-unfold-container" id="letterContainer" role="dialog" aria-modal="true" aria-labelledby="letterHeading">
       <button type="button" class="letter-close-btn" id="letterCloseBtn" aria-label="Close letter">&times;</button>
       
-      <div class="letter-paper">
+      <div class="letter-paper" id="letterPaper">
         <div class="letter-stamp-seal">💌</div>
-        <h2 class="letter-heading" id="letterHeading">Before you go...</h2>
+        <h2 class="letter-heading" id="letterHeading">A Letter For You</h2>
         
-        <div class="letter-body-content">
-          <p id="letterMessageText">I left one more little thing for you.</p>
-          <p class="letter-sub-prompt" id="letterSubPrompt">Let's see what you remember.</p>
-        </div>
-
-        <div class="letter-action-row">
-          <button type="button" class="open-story-btn" id="openOurStoryBtn">
-            <span class="btn-sparkle">✨</span>
-            <span id="openStoryBtnText">OPEN OUR STORY</span>
-            <span class="btn-arrow">→</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================================================================
-       OUR STORY INTERACTIVE EXPERIENCE FULL-SCREEN OVERLAY (4 STAGES)
-       =================================================================== -->
-  <div class="our-story-overlay" id="ourStoryOverlay" style="display: none;" aria-hidden="true">
-    <div class="story-atmosphere-glow" aria-hidden="true"></div>
-
-    <!-- Top Story Navigation Bar -->
-    <div class="story-top-bar">
-      <button type="button" class="story-exit-btn" id="storyExitBtn" title="Close and return to EXTRA">
-        <span>✕ Close</span>
-      </button>
-      <div class="story-stage-indicator" id="storyStageIndicator">
-        <span class="stage-dot active" data-stage="1"></span>
-        <span class="stage-dot" data-stage="2"></span>
-        <span class="stage-dot" data-stage="3"></span>
-        <span class="stage-dot" data-stage="4"></span>
-      </div>
-    </div>
-
-    <!-- Stage Views Viewport -->
-    <div class="story-viewport" id="storyViewport">
-
-      <!-- STAGE 1: HOW WELL DO YOU REMEMBER US? -->
-      <section class="story-stage-pane" id="stage1Pane">
-        <div class="stage-header">
-          <span class="stage-badge">STAGE 01</span>
-          <h2 class="stage-title" id="stage1Title">HOW WELL DO YOU REMEMBER US?</h2>
-          <p class="stage-subtitle" id="stage1Subtitle">Let's see what survived in that memory of yours 👀</p>
-          
-          <div class="quiz-progress-bar-wrap">
-            <div class="quiz-progress-bar" id="quizProgressBar" style="width: 14.3%;"></div>
+        <!-- Closing Emotional Message (Exact configured message) -->
+        <div class="letter-emotional-message-box">
+          <p class="letter-quote-text" id="letterClosingQuote">
+            "No matter where life takes us, I’ll always be grateful that our paths crossed. We shared some beautiful moments that I’ll always appreciate, and I genuinely hope this new chapter of your life brings you happiness, peace, and everything you deserve. Happy Birthday ❤️"
+          </p>
+          <div class="letter-author-signature">
+            <span class="letter-sig-line"></span>
+            <span class="letter-sig-name" id="letterAuthorName">Wisani ❤️</span>
+            <span class="letter-sig-line"></span>
           </div>
-          <div class="quiz-progress-label" id="quizProgressLabel">QUESTION 1 / 7</div>
         </div>
 
-        <div class="quiz-card-container" id="quizCardContainer"></div>
-
-        <div class="quiz-reaction-toast" id="quizReactionToast" style="display: none;">
-          <span class="toast-emoji" id="quizReactionEmoji">✨</span>
-          <span class="toast-msg" id="quizReactionMsg"></span>
-        </div>
-      </section>
-
-      <!-- STAGE 2: CHOOSE YOUR MEMORY -->
-      <section class="story-stage-pane" id="stage2Pane" style="display: none;">
-        <div class="stage-header">
-          <span class="stage-badge">STAGE 02</span>
-          <h2 class="stage-title">CHOOSE YOUR MEMORY</h2>
-          <p class="stage-subtitle">Which one would you choose to relive?</p>
-          <div class="memory-round-pill" id="memoryRoundPill">ROUND 1 / 5</div>
+        <div class="letter-divider" aria-hidden="true">
+          <span class="divider-dot">✦</span>
+          <span class="divider-line"></span>
+          <span class="divider-heart">❤️</span>
+          <span class="divider-line"></span>
+          <span class="divider-dot">✦</span>
         </div>
 
-        <div class="memory-choices-grid" id="memoryChoicesGrid"></div>
-      </section>
+        <!-- Final Question Section -->
+        <div class="letter-final-section" id="letterFinalQuestionSection">
+          <h3 class="letter-final-q-heading">ONE LAST QUESTION</h3>
+          <p class="letter-final-q-prompt" id="letterFinalQuestionPrompt">
+            If you could relive one moment from our story, which one would it be?
+          </p>
 
-      <!-- STAGE 3: THE FINAL QUESTION -->
-      <section class="story-stage-pane" id="stage3Pane" style="display: none;">
-        <div class="final-question-card">
-          <span class="final-slow-badge">A MOMENT OF PAUSE</span>
-          <h2 class="final-question-heading">OKAY...<br><span>ONE LAST QUESTION.</span></h2>
-          <p class="final-question-prompt" id="finalQuestionPromptText">If you could relive one moment from our story, which one would it be?</p>
+          <form id="letterFinalResponseForm" class="letter-final-form">
+            <div class="letter-textarea-wrapper">
+              <textarea 
+                id="letterFinalResponseInput" 
+                class="letter-final-textarea" 
+                rows="4" 
+                placeholder="Write whatever you want to say..." 
+                required 
+                maxlength="800"
+                aria-label="Write whatever you want to say"
+              ></textarea>
+            </div>
 
-          <form id="finalQuestionForm" class="final-question-form">
-            <textarea id="finalQuestionInput" class="final-textarea" rows="4" placeholder="Type your answer here..." required maxlength="600"></textarea>
-            <div class="final-form-footer">
-              <span class="final-char-count"><span id="finalCharCount">0</span>/600</span>
-              <button type="submit" class="final-submit-btn" id="finalSubmitBtn">
-                <span>SUBMIT</span>
-                <span>✨</span>
+            <div class="letter-action-row">
+              <button type="submit" class="letter-send-btn" id="letterFinalSendBtn">
+                <span class="send-btn-sparkle">✨</span>
+                <span id="letterSendBtnText">SEND</span>
+                <span class="send-btn-heart">❤️</span>
               </button>
             </div>
           </form>
 
-          <div id="finalSubmitStatus" class="final-submit-status" style="display: none;"></div>
-        </div>
-      </section>
-
-      <!-- STAGE 4: OUR STORY — WRAPPED & TIMELINE -->
-      <section class="story-stage-pane" id="stage4Pane" style="display: none;">
-        <div class="stage-header">
-          <span class="stage-badge">STAGE 04</span>
-          <h2 class="stage-title" id="wrappedTitle">OUR STORY</h2>
-          <p class="stage-subtitle" id="wrappedSubtitle">A little collection of everything we were.</p>
+          <div id="letterFinalSubmitStatus" class="letter-submit-status" style="display: none;" role="status"></div>
         </div>
 
-        <div class="wrapped-stats-grid" id="wrappedStatsGrid"></div>
-
-        <div class="timeline-intro-box">
-          <h3 class="timeline-main-heading">THE TIMELINE</h3>
-          <p class="timeline-subheading">Tap on any chapter to open the memories inside.</p>
+        <!-- Quiet Final Thank-You State (Replaces question area on send) -->
+        <div id="letterThankYouState" class="letter-thank-you-state" style="display: none;" aria-live="polite">
+          <div class="thank-you-heart">❤️</div>
+          <p class="thank-you-text">Thank you for answering. ❤️</p>
         </div>
-
-        <div class="interactive-timeline-wrap" id="interactiveTimelineWrap"></div>
-
-        <div class="story-quiet-final-card">
-          <div class="final-stars-accent">✦ ✦ ✦</div>
-          <p class="story-quiet-quote" id="storyQuietQuoteText">
-            "Some chapters end.<br>That doesn't mean they weren't beautiful."
-          </p>
-          <div class="story-quiet-actions">
-            <button type="button" class="replay-story-btn" id="replayStoryBtn">
-              <span>↺ REPLAY OUR STORY</span>
-            </button>
-            <button type="button" class="close-story-btn" id="closeStoryFinalBtn">
-              <span>CLOSE</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
+      </div>
     </div>
   </div>
 
   <!-- Supabase JS Client for GitHub Pages persistent online storage -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // Global shared Supabase singleton to prevent duplicate GoTrueClient instances
+    (function () {
+      const SUPABASE_URL = "https://rqehrbituhykrmiujhuk.supabase.co";
+      const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_o5hbaYx5BDiX8kqzNV8nYw_4gQ05n3e";
+      if (typeof window !== "undefined" && window.supabase && typeof window.supabase.createClient === "function" && !window.__sharedSupabaseClient) {
+        try {
+          window.__sharedSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+        } catch (_) {}
+      }
+    })();
+  </script>
 
   <!-- Three.js (WebGL 3D Engine for Interactive Finale Centerpiece) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>

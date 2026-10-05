@@ -391,8 +391,8 @@ const SITE_TEXT_FIELDS = [
   { key: "finaleMainTitle", inputId: "textFinaleMainTitle", domId: "finaleMainTitle", default: "I LOVE YOU" },
   { key: "finaleInfinityBadgeText", inputId: "textFinaleInfinityBadge", domId: "finaleInfinityBadgeText", default: "∞ ALWAYS & FOREVER ∞" },
   { key: "finaleHintText", inputId: "textFinaleInteractiveHint", domId: "finaleHintText", default: "Drag or swipe to tilt • Tap to pulse" },
-  { key: "finaleClosingQuote", inputId: "textFinaleClosingQuote", domId: "finaleClosingQuote", default: `"No matter how many birthdays come and go, every single second with you will always remain my favorite chapter. Thank you for being my peace, my smile, and my greatest adventure. Happy Birthday, my love."` },
-  { key: "finaleAuthorName", inputId: "textFinaleAuthorName", domId: "finaleAuthorName", default: "Forever Yours ❤️" },
+  { key: "finaleClosingQuote", inputId: "textFinaleClosingQuote", domId: "letterClosingQuote", default: `"No matter where life takes us, I’ll always be grateful that our paths crossed. We shared some beautiful moments that I’ll always appreciate, and I genuinely hope this new chapter of your life brings you happiness, peace, and everything you deserve. Happy Birthday ❤️"` },
+  { key: "finaleAuthorName", inputId: "textFinaleAuthorName", domId: "letterAuthorName", default: "Wisani ❤️" },
   { key: "finaleReplayBtnText", inputId: "textFinaleReplayBtn", domId: "finaleReplayBtnText", default: "REPLAY EXPERIENCE" },
 
   // 6. Navigation & Footer
@@ -1542,12 +1542,12 @@ async function loadBirthdayContentFromSupabase() {
         currentSiteTexts.finaleMainTitle = row.finale_title.trim();
       }
       if (row.finale_quote && typeof row.finale_quote === "string" && row.finale_quote.trim() !== "") {
-        const quoteEl = document.getElementById("finaleClosingQuote");
+        const quoteEl = document.getElementById("letterClosingQuote") || document.getElementById("finaleClosingQuote");
         if (quoteEl) quoteEl.textContent = row.finale_quote.trim();
         currentSiteTexts.finaleClosingQuote = row.finale_quote.trim();
       }
       if (row.finale_author && typeof row.finale_author === "string" && row.finale_author.trim() !== "") {
-        const authorEl = document.getElementById("finaleAuthorName");
+        const authorEl = document.getElementById("letterAuthorName") || document.getElementById("finaleAuthorName");
         if (authorEl) authorEl.textContent = row.finale_author.trim();
         currentSiteTexts.finaleAuthorName = row.finale_author.trim();
       }
@@ -4235,7 +4235,8 @@ function initParticlesCanvas() {
     canvas.height = window.innerHeight;
   }
   resizeCanvas();
-  window.addEventListener("resize", resizeCanvas);
+  window.addEventListener("resize", resizeCanvas, { passive: true });
+  window.addEventListener("orientationchange", () => setTimeout(resizeCanvas, 150), { passive: true });
 
   // Create subtle particles
   const count = Math.min(Math.floor(window.innerWidth / 18), 50);
@@ -4375,7 +4376,8 @@ function initConfettiCanvas() {
     canvas.height = window.innerHeight;
   }
   resizeConfetti();
-  window.addEventListener("resize", resizeConfetti);
+  window.addEventListener("resize", resizeConfetti, { passive: true });
+  window.addEventListener("orientationchange", () => setTimeout(resizeConfetti, 150), { passive: true });
 }
 
 function startConfettiAnimation() {

@@ -111,9 +111,13 @@ CREATE TABLE IF NOT EXISTS public.our_story_timeline (
 -- 6. Table: our_story_final_responses (Submissions from visitors - private to admin)
 CREATE TABLE IF NOT EXISTS public.our_story_final_responses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  response_text TEXT NOT NULL,
+  response_text TEXT,
+  response TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+ALTER TABLE public.our_story_final_responses ADD COLUMN IF NOT EXISTS response TEXT;
+ALTER TABLE public.our_story_final_responses ADD COLUMN IF NOT EXISTS response_text TEXT;
 
 -- ==============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES

@@ -411,6 +411,9 @@
       window.addEventListener("resize", () => {
         resizeCanvas();
       }, { passive: true });
+      window.addEventListener("orientationchange", () => {
+        setTimeout(resizeCanvas, 150);
+      }, { passive: true });
     }
 
     attachPointerEvents();
