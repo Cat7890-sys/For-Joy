@@ -1652,7 +1652,14 @@
       const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_o5hbaYx5BDiX8kqzNV8nYw_4gQ05n3e";
       if (typeof window !== "undefined" && window.supabase && typeof window.supabase.createClient === "function" && !window.__sharedSupabaseClient) {
         try {
-          window.__sharedSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+          window.__sharedSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+            auth: {
+              persistSession: true,
+              autoRefreshToken: true,
+              detectSessionInUrl: true,
+              storageKey: "birthday_supabase_auth_token"
+            }
+          });
         } catch (_) {}
       }
     })();
@@ -1661,11 +1668,7 @@
   <!-- Three.js (WebGL 3D Engine for Interactive Finale Centerpiece) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-  <!-- Core Script -->
+  <!-- Core Script (includes extra-heart 3D particle engine & finale letter controller) -->
   <script type="module" src="script.js"></script>
-  <!-- 3D Heart Simulation Engine for EXTRA Section -->
-  <script src="extra-heart.js"></script>
-  <!-- Our Story Interactive Engine -->
-  <script src="our-story.js"></script>
 </body>
 </html>

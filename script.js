@@ -1,3 +1,5 @@
+import './extra-heart.js';
+
 /**
  * ============================================================================
  * BIRTHDAY COUNTDOWN & CELEBRATION
@@ -678,27 +680,46 @@ function updatePublishingStatusUI(type, state, details = null) {
     const timeEl = document.getElementById("lastGitHubSyncTime");
     const commitEl = document.getElementById("lastGitHubCommitSha");
 
-    if (state === "synced") {
+    if (state === "published" || state === "synced") {
       if (dot) dot.className = "publishing-status-dot synced";
       if (txt) {
-        txt.textContent = "Synced";
+        txt.textContent = state === "published" ? "Published ✓" : "Synced";
         txt.style.color = "#52c41a";
       }
       if (timeEl && details?.lastSyncTime) {
         const d = new Date(details.lastSyncTime);
-        timeEl.textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        timeEl.textContent = isNaN(d.getTime()) ? details.lastSyncTime : d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
       }
       if (commitEl && details?.commitSha) {
+        const shortSha = details.commitSha.substring(0, 7);
         if (details.commitUrl) {
-          commitEl.innerHTML = `<a href="${details.commitUrl}" target="_blank" rel="noopener noreferrer" style="color: #ff85c0; text-decoration: underline;">${details.commitSha}</a>`;
+          commitEl.innerHTML = `<a href="${details.commitUrl}" target="_blank" rel="noopener noreferrer" style="color: #ff85c0; text-decoration: underline; font-weight: 700;">${shortSha}</a> <a href="${details.commitUrl}" target="_blank" rel="noopener noreferrer" style="margin-left: 6px; font-size: 0.78rem; color: #7dd3fc; text-decoration: underline;">View Commit ↗</a>`;
         } else {
-          commitEl.textContent = details.commitSha;
+          commitEl.textContent = shortSha;
         }
       }
-    } else if (state === "syncing") {
+    } else if (state === "up_to_date") {
+      if (dot) dot.className = "publishing-status-dot synced";
+      if (txt) {
+        txt.textContent = "Up to date ✓";
+        txt.style.color = "#52c41a";
+      }
+      if (timeEl && details?.lastSyncTime) {
+        const d = new Date(details.lastSyncTime);
+        timeEl.textContent = isNaN(d.getTime()) ? details.lastSyncTime : d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      }
+      if (commitEl && details?.commitSha) {
+        const shortSha = details.commitSha.substring(0, 7);
+        if (details.commitUrl) {
+          commitEl.innerHTML = `<a href="${details.commitUrl}" target="_blank" rel="noopener noreferrer" style="color: #ff85c0; text-decoration: underline; font-weight: 700;">${shortSha}</a> <a href="${details.commitUrl}" target="_blank" rel="noopener noreferrer" style="margin-left: 6px; font-size: 0.78rem; color: #7dd3fc; text-decoration: underline;">View Commit ↗</a>`;
+        } else {
+          commitEl.textContent = shortSha;
+        }
+      }
+    } else if (state === "syncing" || state === "publishing") {
       if (dot) dot.className = "publishing-status-dot unsaved";
       if (txt) {
-        txt.textContent = "Syncing...";
+        txt.textContent = "Publishing to GitHub...";
         txt.style.color = "#faad14";
       }
     } else if (state === "conflict") {
@@ -713,6 +734,12 @@ function updatePublishingStatusUI(type, state, details = null) {
         txt.textContent = "Error";
         txt.style.color = "#ff4d4f";
       }
+    } else if (state === "unsynced") {
+      if (dot) dot.className = "publishing-status-dot unsaved";
+      if (txt) {
+        txt.textContent = "Not Synced";
+        txt.style.color = "#faad14";
+      }
     } else {
       if (dot) dot.className = "publishing-status-dot idle";
       if (txt) {
@@ -724,12 +751,13 @@ function updatePublishingStatusUI(type, state, details = null) {
 }
 
 /**
- * Initializes the publishing status from localStorage or session
+ * Initializes the publishing status and checks live GitHub status
  */
-function initPublishingStatus() {
+async function initPublishingStatus() {
   updatePublishingStatusUI("supabase", "saved");
   updateDataSourceStatusUI(currentDataSourceState);
 
+  // 1. Load locally cached GitHub status first
   try {
     const saved = localStorage.getItem("birthday_github_sync_status_v1");
     if (saved) {
@@ -739,13 +767,75 @@ function initPublishingStatus() {
         if (parsed.fileSha) lastKnownGitHubSha = parsed.fileSha;
         if (parsed.synced) {
           updatePublishingStatusUI("github", "synced", parsed);
-          return;
         }
       }
     }
   } catch (_) {}
 
-  updatePublishingStatusUI("github", "idle");
+  // 2. Asynchronously verify live GitHub repository state
+  try {
+    let commitInfo = null;
+    let fileSha = null;
+
+    // Try server endpoint /api/github-status first if running on fullstack server
+    try {
+      const statusRes = await fetch("/api/github-status");
+      if (statusRes.ok) {
+        const statusData = await statusRes.json();
+        if (statusData.success) {
+          fileSha = statusData.sha;
+          if (statusData.commit) {
+            commitInfo = {
+              sha: statusData.commit.sha,
+              shortSha: statusData.commit.shortSha,
+              htmlUrl: statusData.commit.htmlUrl,
+              date: statusData.commit.date
+            };
+          }
+        }
+      }
+    } catch (_) {}
+
+    // Fallback: fetch directly from public GitHub API (no token needed for public repo GET)
+    if (!commitInfo) {
+      try {
+        const ghRes = await fetch("https://api.github.com/repos/Cat7890-sys/For-Joy/commits/main", {
+          headers: { "Accept": "application/vnd.github.v3+json" }
+        });
+        if (ghRes.ok) {
+          const ghData = await ghRes.json();
+          commitInfo = {
+            sha: ghData.sha,
+            shortSha: ghData.sha ? ghData.sha.substring(0, 7) : "",
+            htmlUrl: ghData.html_url || `https://github.com/Cat7890-sys/For-Joy/commit/${ghData.sha}`,
+            date: ghData.commit?.author?.date || ""
+          };
+        }
+      } catch (_) {}
+    }
+
+    if (commitInfo) {
+      if (fileSha) lastKnownGitHubSha = fileSha;
+      gitHubSyncStatus = {
+        synced: true,
+        lastSyncTime: commitInfo.date || new Date().toISOString(),
+        commitSha: commitInfo.shortSha,
+        commitUrl: commitInfo.htmlUrl,
+        fileSha: fileSha || lastKnownGitHubSha
+      };
+      try {
+        localStorage.setItem("birthday_github_sync_status_v1", JSON.stringify(gitHubSyncStatus));
+      } catch (_) {}
+      updatePublishingStatusUI("github", "synced", gitHubSyncStatus);
+      return;
+    }
+  } catch (liveErr) {
+    console.warn("[GitHub Status] Live status check warning:", liveErr);
+  }
+
+  if (!gitHubSyncStatus.synced) {
+    updatePublishingStatusUI("github", "idle");
+  }
 }
 
 function initSiteTexts() {
@@ -2020,6 +2110,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initChapterSystem();
   initPhotoStorageAndBurstSettings();
   setupAdminPanelControls();
+  initFinaleLetterController();
   loadBirthdayContentFromSupabase();
   loadBirthdayPhotosFromSupabase();
 });
@@ -6390,6 +6481,79 @@ function setupAdminPanelControls() {
     }
   }
 
+  async function callSecureGitHubPublish(contentPayload, commitMessage) {
+    const token = currentAdminSession?.access_token || "";
+    let lastError = null;
+
+    // Strategy 1: Local server-side publishing endpoint if running on fullstack server
+    try {
+      const localRes = await fetch("/api/github-publish", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          content: contentPayload,
+          expectedSha: lastKnownGitHubSha || undefined,
+          commitMessage: commitMessage || "Update website content from admin portal"
+        })
+      });
+
+      if (localRes.status !== 404) {
+        const localData = await localRes.json().catch(() => ({}));
+        if (!localRes.ok) {
+          throw new Error(localData?.error || `Server publish returned status ${localRes.status}`);
+        }
+        return localData;
+      }
+    } catch (localErr) {
+      lastError = localErr;
+    }
+
+    // Strategy 2: Call Supabase Edge Function (works on GitHub Pages and everywhere)
+    const client = getSupabaseClient();
+    if (client && client.functions) {
+      try {
+        const { data, error } = await client.functions.invoke("github-update-content", {
+          body: {
+            content: contentPayload,
+            expectedSha: lastKnownGitHubSha || undefined,
+            commitMessage: commitMessage || "Update website content from admin portal"
+          }
+        });
+        if (error) {
+          throw error;
+        }
+        if (data) return data;
+      } catch (fnErr) {
+        lastError = fnErr;
+      }
+    }
+
+    // Direct REST fetch to Supabase Edge Function fallback
+    const edgeUrl = `${SUPABASE_URL}/functions/v1/github-update-content`;
+    const edgeRes = await fetch(edgeUrl, {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_PUBLISHABLE_KEY,
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        content: contentPayload,
+        expectedSha: lastKnownGitHubSha || undefined,
+        commitMessage: commitMessage || "Update website content from admin portal"
+      })
+    });
+
+    const edgeData = await edgeRes.json().catch(() => ({}));
+    if (!edgeRes.ok) {
+      throw new Error(edgeData?.error || lastError?.message || `GitHub publishing request failed (${edgeRes.status})`);
+    }
+    return edgeData;
+  }
+
   async function saveWebsiteChangesToGitHub() {
     const statusId = "adminGitHubSaveStatus";
     const btn = document.getElementById("adminSaveToGitHubBtn");
@@ -6404,79 +6568,18 @@ function setupAdminPanelControls() {
     readAdminTextInputs();
     applySiteTextsToDOM();
 
-    // 1. Supabase save FIRST
-    showStorageStatus(statusId, "Step 1/2: Saving changes to Supabase...", "loading", 0);
-    updatePublishingStatusUI("supabase", "saving");
-
-    const saved = await saveAllBirthdayContentToSupabase();
-    if (!saved) {
-      updatePublishingStatusUI("supabase", "unsaved");
-      const errDetail = lastSupabaseError ? ` (${lastSupabaseError})` : "";
-      showStorageStatus(statusId, `Supabase save failed${errDetail}. GitHub commit aborted to prevent desynchronization.`, "error", 7000);
-      return;
-    }
-    updatePublishingStatusUI("supabase", "saved");
-
-    // 2. GitHub commit through Supabase Edge Function
-    showStorageStatus(statusId, "Step 2/2: Committing content to GitHub repository via Supabase Edge Function...", "loading", 0);
-    updatePublishingStatusUI("github", "syncing");
+    // Show clear progress state
+    showStorageStatus(statusId, "Publishing website changes to GitHub...", "loading", 0);
+    updatePublishingStatusUI("github", "publishing");
     if (btn) btn.disabled = true;
     if (bottomBtn) bottomBtn.disabled = true;
 
     try {
       const contentPayload = buildSiteContentObject();
-      const token = currentAdminSession?.access_token;
-      const client = getSupabaseClient();
-
-      let resData = null;
-      let invokeError = null;
-
-      if (client && client.functions) {
-        try {
-          const { data, error } = await client.functions.invoke("github-update-content", {
-            body: {
-              content: contentPayload,
-              expectedSha: lastKnownGitHubSha || undefined,
-              commitMessage: `Update website content from Admin Console`
-            }
-          });
-          if (error) {
-            invokeError = error;
-          } else {
-            resData = data;
-          }
-        } catch (fnErr) {
-          invokeError = fnErr;
-        }
-      }
-
-      if (!resData) {
-        const edgeUrl = `${SUPABASE_URL}/functions/v1/github-update-content`;
-        const res = await fetch(edgeUrl, {
-          method: "POST",
-          headers: {
-            "apikey": SUPABASE_PUBLISHABLE_KEY,
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            content: contentPayload,
-            expectedSha: lastKnownGitHubSha || undefined,
-            commitMessage: `Update website content from Admin Console`
-          })
-        });
-
-        resData = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          if (res.status === 409) {
-            updatePublishingStatusUI("github", "conflict");
-            showStorageStatus(statusId, "GitHub file changed externally. Please reload and try again.", "error", 8000);
-            return;
-          }
-          const errMsg = resData?.error || invokeError?.message || `GitHub commit request failed (${res.status})`;
-          throw new Error(errMsg);
-        }
-      }
+      const resData = await callSecureGitHubPublish(
+        contentPayload,
+        "Update website content from admin portal"
+      );
 
       if (resData?.conflict) {
         updatePublishingStatusUI("github", "conflict");
@@ -6487,19 +6590,42 @@ function setupAdminPanelControls() {
       if (!resData?.success) {
         updatePublishingStatusUI("github", "error");
         const safeMsg = resData?.error || "GitHub repository update failed.";
-        showStorageStatus(statusId, safeMsg, "error", 7000);
+        showStorageStatus(statusId, safeMsg, "error", 8000);
+        return;
+      }
+
+      // Handle no-changes case cleanly without unnecessary commits
+      if (resData.noChanges) {
+        const currentSha = resData.commit?.shortSha || (resData.commit?.sha ? resData.commit.sha.substring(0, 7) : "");
+        const commitUrl = resData.commit?.htmlUrl || `https://github.com/Cat7890-sys/For-Joy/commit/${resData.commit?.sha || ""}`;
+        if (resData.file?.sha) lastKnownGitHubSha = resData.file.sha;
+
+        gitHubSyncStatus = {
+          synced: true,
+          lastSyncTime: resData.timestamp || new Date().toISOString(),
+          commitSha: currentSha,
+          commitUrl: commitUrl,
+          fileSha: resData.file?.sha || lastKnownGitHubSha
+        };
+
+        try {
+          localStorage.setItem("birthday_github_sync_status_v1", JSON.stringify(gitHubSyncStatus));
+        } catch (_) {}
+
+        updatePublishingStatusUI("github", "up_to_date", gitHubSyncStatus);
+        showStorageStatus(statusId, "ℹ️ No GitHub changes detected. Repository content is already up-to-date.", "success", 7000);
         return;
       }
 
       const commitSha = resData.commit?.sha || "";
       const shortSha = resData.commit?.shortSha || (commitSha ? commitSha.substring(0, 7) : "");
-      const commitUrl = resData.commit?.htmlUrl || `https://github.com/Cat7890-sys/Birthday-countdown-v1/commit/${commitSha}`;
+      const commitUrl = resData.commit?.htmlUrl || `https://github.com/Cat7890-sys/For-Joy/commit/${commitSha}`;
       const newFileSha = resData.file?.sha || null;
       if (newFileSha) lastKnownGitHubSha = newFileSha;
 
       gitHubSyncStatus = {
         synced: true,
-        lastSyncTime: new Date().toISOString(),
+        lastSyncTime: resData.timestamp || new Date().toISOString(),
         commitSha: shortSha,
         commitUrl: commitUrl,
         fileSha: newFileSha
@@ -6509,16 +6635,16 @@ function setupAdminPanelControls() {
         localStorage.setItem("birthday_github_sync_status_v1", JSON.stringify(gitHubSyncStatus));
       } catch (_) {}
 
-      updatePublishingStatusUI("github", "synced", gitHubSyncStatus);
+      updatePublishingStatusUI("github", "published", gitHubSyncStatus);
 
-      const successMsg = "Saved to GitHub successfully. Changes committed to GitHub. GitHub Pages may take a short time to deploy.";
-      showStorageStatus(statusId, `✅ ${successMsg}${shortSha ? ` (Commit: ${shortSha})` : ""}`, "success", 10000);
+      const successMsg = `Saved to GitHub successfully! (Commit: ${shortSha}). GitHub Pages may take a short time to deploy.`;
+      showStorageStatus(statusId, `✅ ${successMsg}`, "success", 10000);
 
     } catch (err) {
       console.error("[GitHub Sync] Commit error:", err);
       updatePublishingStatusUI("github", "error");
       const cleanErr = err?.message || "GitHub repository update failed.";
-      showStorageStatus(statusId, cleanErr, "error", 7000);
+      showStorageStatus(statusId, cleanErr, "error", 8000);
     } finally {
       if (btn) btn.disabled = false;
       if (bottomBtn) bottomBtn.disabled = false;
@@ -8401,4 +8527,204 @@ if (typeof window !== "undefined") {
   window.initFinaleScene = initFinaleScene;
   window.disposeFinaleThreeScene = disposeFinaleThreeScene;
 }
+
+// ==============================================================================
+// FINALE FLOATING LETTER & PRIVATE RESPONSE CONTROLLER
+// 3D Heart -> Floating Letter -> Envelope Opens -> Letter Opens ->
+// Closing Emotional Message -> Final Question -> Text Area -> Send ->
+// Private Supabase Submission -> Final Thank-You State -> END
+// ==============================================================================
+
+function initFinaleLetterController() {
+  const envWrapper = document.getElementById("envelopeWrapper");
+  const letterModal = document.getElementById("letterModalOverlay");
+  const letterBackdrop = document.getElementById("letterBackdrop");
+  const letterCloseBtn = document.getElementById("letterCloseBtn");
+
+  const form = document.getElementById("letterFinalResponseForm");
+  const input = document.getElementById("letterFinalResponseInput");
+  const sendBtn = document.getElementById("letterFinalSendBtn");
+  const statusEl = document.getElementById("letterFinalSubmitStatus");
+  const questionSection = document.getElementById("letterFinalQuestionSection");
+  const thankYouState = document.getElementById("letterThankYouState");
+
+  function syncLetterTexts() {
+    const headingEl = document.getElementById("letterHeading");
+    const quoteEl = document.getElementById("letterClosingQuote");
+    const authorEl = document.getElementById("letterAuthorName");
+    const promptEl = document.getElementById("letterFinalQuestionPrompt");
+
+    const activeQuote = currentSiteTexts?.finaleClosingQuote || defaultSiteTexts.finaleClosingQuote;
+    const activeAuthor = currentSiteTexts?.finaleAuthorName || defaultSiteTexts.finaleAuthorName;
+
+    if (headingEl) headingEl.textContent = "A Letter For You";
+    if (quoteEl) quoteEl.textContent = activeQuote;
+    if (authorEl) authorEl.textContent = activeAuthor;
+    if (promptEl) promptEl.textContent = "If you could relive one moment from our story, which one would it be?";
+  }
+
+  if (envWrapper && letterModal && !envWrapper.dataset.bound) {
+    envWrapper.dataset.bound = "true";
+
+    function triggerEnvelopeOpen() {
+      if (envWrapper.classList.contains("opening")) return;
+      envWrapper.classList.add("opening");
+      syncLetterTexts();
+
+      setTimeout(() => {
+        syncLetterTexts();
+        letterModal.style.display = "flex";
+        void letterModal.offsetWidth;
+        letterModal.classList.add("active");
+      }, 700);
+    }
+
+    envWrapper.addEventListener("click", triggerEnvelopeOpen);
+    envWrapper.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        triggerEnvelopeOpen();
+      }
+    });
+
+    function closeLetter() {
+      letterModal.classList.remove("active");
+      setTimeout(() => {
+        letterModal.style.display = "none";
+        envWrapper.classList.remove("opening");
+      }, 400);
+    }
+
+    if (letterCloseBtn) letterCloseBtn.addEventListener("click", closeLetter);
+    if (letterBackdrop) letterBackdrop.addEventListener("click", closeLetter);
+  }
+
+  // Handle Form Submission for Private Response
+  if (form && !form.dataset.bound) {
+    form.dataset.bound = "true";
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const text = input ? input.value.trim() : "";
+      if (!text) {
+        if (input) input.focus();
+        return;
+      }
+
+      if (sendBtn) {
+        sendBtn.disabled = true;
+        const textSpan = document.getElementById("letterSendBtnText");
+        if (textSpan) textSpan.textContent = "SENDING...";
+      }
+
+      if (statusEl) {
+        statusEl.style.display = "block";
+        statusEl.textContent = "Saving your answer...";
+      }
+
+      const timestamp = new Date().toISOString();
+      let saved = false;
+
+      // 1. Submit to Supabase table: our_story_final_responses
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          const { error } = await client
+            .from("our_story_final_responses")
+            .insert([{ response_text: text, response: text, created_at: timestamp }]);
+          if (!error) saved = true;
+        } catch (_) {}
+
+        if (!saved) {
+          try {
+            const { error } = await client
+              .from("our_story_final_responses")
+              .insert([{ response_text: text, created_at: timestamp }]);
+            if (!error) saved = true;
+          } catch (_) {}
+        }
+
+        if (!saved) {
+          try {
+            const { error } = await client
+              .from("our_story_final_responses")
+              .insert([{ response: text, created_at: timestamp }]);
+            if (!error) saved = true;
+          } catch (_) {}
+        }
+      }
+
+      // 2. LocalStorage backup
+      try {
+        const localList = JSON.parse(localStorage.getItem("our_story_my_responses_v1") || "[]");
+        localList.push({ response_text: text, response: text, created_at: timestamp });
+        localStorage.setItem("our_story_my_responses_v1", JSON.stringify(localList));
+      } catch (_) {}
+
+      // 3. Transition to thank-you state
+      if (statusEl) statusEl.style.display = "none";
+      if (questionSection) questionSection.style.display = "none";
+      if (thankYouState) thankYouState.style.display = "block";
+    });
+  }
+
+  // Admin Submissions Viewer
+  renderAdminSubmissionsViewer();
+}
+
+async function renderAdminSubmissionsViewer() {
+  const container = document.getElementById("adminSubmissionsList");
+  if (!container) return;
+
+  container.innerHTML = `<p style="color: #94a3b8; font-size: 0.82rem; margin: 0;">Loading private submissions...</p>`;
+
+  let responses = [];
+  const client = getSupabaseClient();
+  if (client) {
+    try {
+      const { data } = await client
+        .from("our_story_final_responses")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (data && Array.isArray(data)) responses = data;
+    } catch (err) {
+      console.warn("[Admin Submissions]:", err);
+    }
+  }
+
+  if (responses.length === 0) {
+    try {
+      responses = JSON.parse(localStorage.getItem("our_story_my_responses_v1") || "[]");
+    } catch (_) {}
+  }
+
+  if (responses.length === 0) {
+    container.innerHTML = `<p style="color: #94a3b8; font-size: 0.82rem; margin: 0;">No responses submitted yet.</p>`;
+    return;
+  }
+
+  function escapeHtml(str) {
+    if (!str || typeof str !== "string") return "";
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+  }
+
+  container.innerHTML = responses.map((r, i) => {
+    const text = r.response_text || r.response || "";
+    const dateStr = r.created_at ? new Date(r.created_at).toLocaleString() : "Recent";
+    return `
+      <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 0.75rem 0.95rem; margin-bottom: 0.6rem; border-left: 3px solid #ff2a7a;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+          <span style="font-weight: 700; color: #ff85c0; font-size: 0.8rem;">Submission #${responses.length - i}</span>
+          <span style="color: #94a3b8; font-size: 0.72rem;">${dateStr}</span>
+        </div>
+        <p style="color: #ffffff; font-size: 0.88rem; margin: 0; line-height: 1.5; white-space: pre-wrap;">“${escapeHtml(text)}”</p>
+      </div>
+    `;
+  }).join("");
+}
+
+if (typeof window !== "undefined") {
+  window.initFinaleLetterController = initFinaleLetterController;
+  window.renderAdminSubmissionsViewer = renderAdminSubmissionsViewer;
+}
+
 
