@@ -1334,6 +1334,19 @@
       saveBtn.addEventListener("click", handleSaveOurStoryAdmin);
     }
 
+    const saveGitHubBtn = document.getElementById("adminSaveOurStoryToGitHubBtn");
+    if (saveGitHubBtn) {
+      saveGitHubBtn.addEventListener("click", async () => {
+        await handleSaveOurStoryAdmin();
+        if (typeof window !== "undefined" && typeof window.saveWebsiteChangesToGitHub === "function") {
+          showAdminStatus("Committing Our Story & all website assets to GitHub...", "loading");
+          await window.saveWebsiteChangesToGitHub();
+        } else {
+          showAdminStatus("Our Story saved to Supabase & ready in GitHub commit payload! ❤️", "success");
+        }
+      });
+    }
+
     populateAdminFields();
     loadSubmissionsForAdmin();
   }
@@ -2127,6 +2140,17 @@
 
   if (typeof window !== "undefined") {
     window.loadStoryData = loadStoryData;
+    window.getOurStoryData = () => storyData;
+    window.setOurStoryData = (newData) => {
+      if (newData && typeof newData === "object") {
+        storyData = Object.assign({}, defaultOurStoryData, newData);
+        try {
+          localStorage.setItem("our_story_content_v1", JSON.stringify(storyData));
+        } catch (_) {}
+        applySettingsToDOM();
+      }
+    };
+    window.saveOurStoryToSupabase = handleSaveOurStoryAdmin;
     window.setupOurStoryAdminControls = setupOurStoryAdminControls;
     window.initOurStoryEnvelope = initEnvelope;
     window.resetOurStoryEnvelope = resetEnvelope;

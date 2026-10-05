@@ -548,6 +548,45 @@ function buildSiteContentObject() {
       (burstConfig?.revealThirdTitle || currentRevealTitles[2] || "MY EVERYTHING ❤️").trim()
     ],
     birthdayMessage: (currentMessage || birthdayMessage).trim(),
+    photos: (currentPhotos || []).map(p => ({
+      id: p.id,
+      name: p.name,
+      src: p.src,
+      caption: p.caption || ""
+    })),
+    memories: (activeMemories || []).map(m => ({
+      id: m.id,
+      title: m.title,
+      caption: m.caption,
+      mediaUrl: m.mediaUrl,
+      date: m.date,
+      isHighlight: Boolean(m.isHighlight)
+    })),
+    love_notes: (guestbookMessages || []).map(n => ({
+      id: n.id,
+      author: n.author,
+      role: n.role,
+      avatar: n.avatar,
+      message: n.message,
+      sticker: n.sticker,
+      photos: n.photos || [],
+      videoUrl: n.videoUrl || null,
+      audioUrl: n.audioUrl || null,
+      date: n.date,
+      likes: n.likes || 1,
+      type: n.type || "text"
+    })),
+    our_story: (typeof window !== "undefined" && typeof window.getOurStoryData === "function")
+      ? window.getOurStoryData()
+      : (() => {
+          try {
+            return JSON.parse(localStorage.getItem("our_story_content_v1") || "null");
+          } catch (_) {
+            return null;
+          }
+        })(),
+    backgroundUrl: customBackgroundUrl || "",
+    musicUrl: customMusicUrl || "",
     lastUpdated: new Date().toISOString()
   };
 }
@@ -586,6 +625,16 @@ async function loadSiteContentFromJSON() {
             data.revealTitles[1] || "MY LOVE",
             data.revealTitles[2] || "MY EVERYTHING ❤️"
           ];
+        }
+
+        if (data.our_story) {
+          if (typeof window !== "undefined" && typeof window.setOurStoryData === "function") {
+            window.setOurStoryData(data.our_story);
+          } else {
+            try {
+              localStorage.setItem("our_story_content_v1", JSON.stringify(data.our_story));
+            } catch (_) {}
+          }
         }
 
         applySiteTextsToDOM();
@@ -6472,6 +6521,10 @@ function setupAdminPanelControls() {
       if (btn) btn.disabled = false;
       if (bottomBtn) bottomBtn.disabled = false;
     }
+  }
+
+  if (typeof window !== "undefined") {
+    window.saveWebsiteChangesToGitHub = saveWebsiteChangesToGitHub;
   }
 
   const saveAllTextBtn = document.getElementById("adminSaveAllTextBtn");
